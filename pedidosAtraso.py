@@ -6,8 +6,6 @@ import datetime as dt
 data_hoje = dt.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 # Criando a classe para fornecedores / pedidos / emails
-
-
 class Fornecedor():
     def __init__(self, Nome, Email):
         self.Nome = Nome
@@ -64,15 +62,18 @@ for celula in planilha_ativa['M']:
 
 ws.save("PedidoAtraso.xlsx")
 
-# Fornecedores
 tabelapd = pd.read_excel("./PedidoAtraso.xlsx")
-tabelaSduplicata = tabelapd.drop_duplicates(subset="Fornecedor", keep="first")
-fornecedores = tabelaSduplicata.loc[:, ["Fornecedor"]]
 
-totalpedidosamp = tabelapd.loc[tabelapd["Fornecedor"]== "AMPHENOL TFC DO BRASIL LTDA"].values
+#Puxando fornecedores sem duplicatas
+fornecedores = tabelapd.drop_duplicates(subset="Fornecedor", keep="first")
+
+
+
+
+""" totalpedidosamp = tabelapd.loc[tabelapd["Fornecedor"]== "AMPHENOL TFC DO BRASIL LTDA"].values
 
 print(totalpedidosamp)
-print(len(totalpedidosamp))
+print(len(totalpedidosamp)) """
 
 # totalpedidosamp = totalpedidosamp.reset_index()
 
