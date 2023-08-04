@@ -65,8 +65,9 @@ ws.save("PedidoAtraso.xlsx")
 tabelapd = pd.read_excel("./PedidoAtraso.xlsx")
 
 #Puxando fornecedores sem duplicatas
-fornecedores = tabelapd.drop_duplicates(subset="Fornecedor", keep="first")
-
+fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(subset="Fornecedor", keep="first").reset_index().values.tolist()
+print(fornecedores[2])
+print("total fornecedores: ", len(fornecedores))
 
 
 
