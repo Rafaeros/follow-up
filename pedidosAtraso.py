@@ -69,6 +69,10 @@ fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(subset="Fornecedo
 print(fornecedores[2])
 print("total fornecedores: ", len(fornecedores))
 
+for fornecedor in fornecedores:
+    lateOrders = tabelapd.loc[tabelapd['Fornecedor']==f'{fornecedor}']
+    print(lateOrders)
+
 
 
 """ totalpedidosamp = tabelapd.loc[tabelapd["Fornecedor"]== "AMPHENOL TFC DO BRASIL LTDA"].values
