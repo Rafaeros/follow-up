@@ -1,11 +1,14 @@
 import openpyxl as op
+from openpyxl.styles import NamedStyle
 import pandas as pd
 import datetime as dt
+from datetime import timezone
 
 # Pegando data de hoje
-data_hoje = dt.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-
+data_hoje = dt.datetime.now()
+print(data_hoje)
 # Criando a classe para fornecedores / pedidos / emails
+
 class Fornecedor():
     def __init__(self, Nome, Email):
         self.Nome = Nome
@@ -64,32 +67,26 @@ ws.save("PedidoAtraso.xlsx")
 
 tabelapd = pd.read_excel("./PedidoAtraso.xlsx")
 
-#Puxando fornecedores sem duplicatas
-fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(subset="Fornecedor", keep="first").reset_index().values.tolist()
-print(fornecedores[2])
-print("total fornecedores: ", len(fornecedores))
+# Puxando fornecedores sem duplicatas
+fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
+    subset="Fornecedor", keep="first").values.tolist()
+""" print(fornecedores)
+print("total fornecedores: ", len(fornecedores)) """
 
-for fornecedor in fornecedores:
-    lateOrders = tabelapd.loc[tabelapd['Fornecedor']==f'{fornecedor}']
-    print(lateOrders)
+pedidosTMF = tabelapd.loc[tabelapd['Fornecedor'] == 'TMF COMPONENTES ELETRO EL ETRONICOS LTDA', [
+    "Neg.", "Data de entrega", "Cod.", "Material", "Faltam"]].reset_index()
+print(pedidosTMF)
 
+pedidosTMF.pop(pedidosTMF.columns[0])
 
+pedidosTMF.index += 1
 
-""" totalpedidosamp = tabelapd.loc[tabelapd["Fornecedor"]== "AMPHENOL TFC DO BRASIL LTDA"].values
+pedidosTMF['Data de entrega'] = pd.to_datetime(
+    pedidosTMF['Data de entrega'], format='%d/%m/%Y')
 
-print(totalpedidosamp)
-print(len(totalpedidosamp)) """
+pedidosTMF['Data de entrega'] = pedidosTMF["Data de entrega"].dt.strftime(
+    "%d/%m/%Y   ")
 
-# totalpedidosamp = totalpedidosamp.reset_index()
+print(pedidosTMF)
 
-
-#classeFornecedorAmphenol = Fornecedor("Amphenol", "Amphenol.com.br")
-
-
-#print(classeFornecedorAmphenol.Nome)
-#print(classeFornecedorAmphenol.Email)
-
-# print(len(classeFornecedorAmphenol.TotalPedidos))
-
-""" classeFornecedorAmphenol.mostrarPedidos()
-classeFornecedorAmphenol.removerPedido(0) """
+pedidosTMF.to_excel('PedidosTMF.xlsx')
