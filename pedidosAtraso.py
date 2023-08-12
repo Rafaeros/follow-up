@@ -3,6 +3,7 @@ from openpyxl.styles import NamedStyle
 import pandas as pd
 import datetime as dt
 from datetime import timezone
+import time
 
 # Pegando data de hoje
 data_hoje = dt.datetime.now()
@@ -41,60 +42,27 @@ valoresRateio = ['MATERIA-PRIMA',
                  'MATERIA PRIMA INDUSTRIALIZAÇÃO', 'MATERIAL DE USO E CONSUMO']
 Pedidos = Pedidos[Pedidos['Rateio'].isin(valoresRateio)]
 
-print(Pedidos)
+Pedidos.to_excel('PedidosAtraso.xlsx')
 
-Pedidos.to_excel('TestePandas.xlsx')
+time.sleep(5)
 
-""" # Carregando Planilha
-ws = op.load_workbook('./EntregasPendentes10_07_2023.xlsx')
-planilha_ativa = ws.active
-ult_linha_planilha = planilha_ativa.max_row
+tabelapd = pd.read_excel("./PedidosAtraso.xlsx")
 
-# Vendo todos pedidos que estão atrasados
-def pegandoPedidosAtrasados(database):
-    i=0
-    fill_atrasado = Pattern
-    ultima_linha = database.max_row
-    datas_antigas = [planilha_ativa.cell(row=i, column=2).value for i in range(2,ultima_linha):]
-    
-    if(planilha_ativa.cell(row=i, column=2)<data_hoje: planilha_ativa[f"B.{celula.row}"].fill = PatternFill(start_color)
-
-
-# Limpando planilha
-for celula in planilha_ativa["Q"]:
-    if (celula.value == "Envio pendente"):
-        linha_celula = celula.row
-        planilha_ativa.delete_rows(linha_celula)
-
-for celula in planilha_ativa["G"]:
-    if (celula.value != "Brasil" and celula.value != "Nacionalidade"):
-        linha_celula = celula.row
-        planilha_ativa.delete_rows(linha_celula)
-
-for celula in planilha_ativa['M']:
-    if (celula.value != "MATERIA-PRIMA" and celula.value != "Rateio"):
-        linha_celula = celula.row
-        planilha_ativa.delete_rows(linha_celula)
-
-
-ws.save("PedidoAtraso.xlsx") """
-
-""" tabelapd = pd.read_excel("./PedidoAtraso.xlsx")
 
 # Puxando fornecedores sem duplicatas
 fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
     subset="Fornecedor", keep="first").values.tolist()
 
-pedidosTMF = tabelapd.loc[tabelapd['Fornecedor'] == 'TMF COMPONENTES ELETRO EL ETRONICOS LTDA', [
+PedidosAMP = tabelapd.loc[tabelapd['Fornecedor'] == 'AMPHENOL TFC DO BRASIL LTDA', [
     "Neg.", "Data de entrega", "Cod.", "Material", "Faltam"]].reset_index()
-pedidosTMF.pop(pedidosTMF.columns[0])
+PedidosAMP.pop(PedidosAMP.columns[0])
 
-pedidosTMF.index += 1
+PedidosAMP.index += 1
 
-pedidosTMF['Data de entrega'] = pd.to_datetime(
-    pedidosTMF['Data de entrega'], format='%d/%m/%Y')
+PedidosAMP['Data de entrega'] = pd.to_datetime(
+    PedidosAMP['Data de entrega'], format='%d/%m/%Y')
 
-pedidosTMF['Data de entrega'] = pedidosTMF["Data de entrega"].dt.strftime(
+PedidosAMP['Data de entrega'] = PedidosAMP["Data de entrega"].dt.strftime(
     "%d/%m/%Y   ")
 
-pedidosTMF.to_excel('PedidosTMF.xlsx') """
+PedidosAMP.to_excel('PedidosAMP.xlsx')
