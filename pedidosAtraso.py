@@ -1,7 +1,7 @@
 import pandas as pd
 import datetime as dt
 import time
-
+import win32com.client as win32
 
 # Pegando data de hoje
 data_hoje = dt.datetime.now()
@@ -29,6 +29,7 @@ class Fornecedor():
         self.Email = Email
         self.TotalPedidos = TotalPedidos
 
+
 Pedidos = pd.read_excel('EntregasPendentes10_07_2023.xlsx')
 
 Pedidos = Pedidos[Pedidos['Situação'] != 'Envio pendente']
@@ -51,7 +52,10 @@ tabelapd['Fornecedor'].to_string()
 fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
     subset="Fornecedor", keep="first").values.tolist()
 
-#Pegando os pedidos de cada fornecedor e separando
+
+outlook = win32.Dispatch('outlook.application')
+
+# Pegando os pedidos de cada fornecedor e separando
 Lista_fornecedores = []
 for fornecedor in fornecedores:
     PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
@@ -59,13 +63,26 @@ for fornecedor in fornecedores:
     formatar_dados(PedidosAtrasados)
     Lista_fornecedores.append(Fornecedor(
         fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados))
-
     # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
     # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
 for fornc in Lista_fornecedores:
-    print(F'Nome: {fornc.Nome}')
+    """ print(F'Nome: {fornc.Nome}')
     print(F'Email: {fornc.Email}')
-    print(F'Nome: {fornc.TotalPedidos}')
+    print(F'Nome: {fornc.TotalPedidos}') """
+    time.sleep(1)
+    email = outlook.CreateItem(0)
+    time.sleep(1)
+    email.To = 'rafaelzinhobr159@gmail.com'
+    email.Subject = f"Pedidos atrasados {fornc.Nome}"
+    email.HTMLBody = f'''
+    <h3>Olá {fornc.Nome}, favor confirmar o envido destes pedidos que cosstam em atraso
+    no nosso sistema:</h3>
+
+    {fornc.TotalPedidos}
+    '''
+    email.Send()
+    print("Email enviado")
+    time.sleep(1)
