@@ -29,24 +29,6 @@ class Fornecedor():
         self.Email = Email
         self.TotalPedidos = TotalPedidos
 
-    def incrementarFornecedor(self, forn):
-        self.Nome.append(forn)
-    """ def inserirPedidos(self, incremento_pedidos):
-        self.TotalPedidos.append(incremento_pedidos)
-
-    def mostrarPedidos(self):
-        print(self.TotalPedidos)
-
-    def removerPedido(self, Valor):
-        print("------------------------")
-        self.Valor = Valor
-        pedido_removido = self.TotalPedidos[Valor]
-        self.TotalPedidos.pop(Valor)
-        print("Pedidos após a remoção-----------------")
-        print(self.TotalPedidos)
-        print("------------------------") """
-
-
 Pedidos = pd.read_excel('EntregasPendentes10_07_2023.xlsx')
 
 Pedidos = Pedidos[Pedidos['Situação'] != 'Envio pendente']
@@ -69,13 +51,7 @@ tabelapd['Fornecedor'].to_string()
 fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
     subset="Fornecedor", keep="first").values.tolist()
 
-# Tentando iterar os pedidos
-
-""" i = 0
-
-while i < len(fornecedores):
-    print(type(fornecedores[i]), fornecedores[i])
-    i += 1 """
+#Pegando os pedidos de cada fornecedor e separando
 Lista_fornecedores = []
 for fornecedor in fornecedores:
     PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
@@ -86,7 +62,6 @@ for fornecedor in fornecedores:
 
     # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
     # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
-
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
