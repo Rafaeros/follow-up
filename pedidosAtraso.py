@@ -42,7 +42,7 @@ Pedidos = Pedidos[Pedidos['Rateio'].isin(valoresRateio)]
 
 Pedidos.to_excel('PedidosAtraso.xlsx')
 
-time.sleep(3)
+time.sleep(1.5)
 
 tabelapd = pd.read_excel("./PedidosAtraso.xlsx")
 
@@ -51,21 +51,21 @@ tabelapd['Fornecedor'].to_string()
 fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
     subset="Fornecedor", keep="first").values.tolist()
 
-#Pegando os pedidos de cada fornecedor e separando
+# Pegando os pedidos de cada fornecedor e separando
 Lista_fornecedores = []
-for fornecedor in fornecedores:
+""" for fornecedor in fornecedores:
     PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
         "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
     formatar_dados(PedidosAtrasados)
     Lista_fornecedores.append(Fornecedor(
-        fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados))
+        fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados)) """
 
     # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
     # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
-for fornc in Lista_fornecedores:
+""" for fornc in Lista_fornecedores:
     print(F'Nome: {fornc.Nome}')
     print(F'Email: {fornc.Email}')
-    print(F'Nome: {fornc.TotalPedidos}')
+    print(F'Nome: {fornc.TotalPedidos}') """
