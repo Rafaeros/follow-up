@@ -53,8 +53,6 @@ fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
     subset="Fornecedor", keep="first").values.tolist()
 
 
-outlook = win32.Dispatch('outlook.application')
-
 # Pegando os pedidos de cada fornecedor e separando
 Lista_fornecedores = []
 for fornecedor in fornecedores:
@@ -68,21 +66,32 @@ for fornecedor in fornecedores:
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
-for fornc in Lista_fornecedores:
-    """ print(F'Nome: {fornc.Nome}')
-    print(F'Email: {fornc.Email}')
-    print(F'Nome: {fornc.TotalPedidos}') """
+
+
+outlook = win32.Dispatch('outlook.application')
+
+""" for forncecedor in Lista_fornecedores:
     time.sleep(1)
     email = outlook.CreateItem(0)
     time.sleep(1)
     email.To = 'rafaelzinhobr159@gmail.com'
-    email.Subject = f"Pedidos atrasados {fornc.Nome}"
+    email.Subject = f"Pedidos atrasados {forncecedor.Nome}"
     email.HTMLBody = f'''
-    <h3>Olá {fornc.Nome}, favor confirmar o envido destes pedidos que cosstam em atraso
+    <h3>Olá {fornecedor.Nome}, favor confirmar o envido destes pedidos que cosstam em atraso
     no nosso sistema:</h3>
 
-    {fornc.TotalPedidos}
+    {forncecedor.TotalPedidos}
     '''
     email.Send()
     print("Email enviado")
-    time.sleep(1)
+    time.sleep(1) """
+
+print(Lista_fornecedores[15].TotalPedidos)
+
+pedidosAMPCSV = Lista_fornecedores[15].TotalPedidos.to_csv('PedidosAMPCSV.csv')
+
+""" 
+email = outlook.CreateItem(0)
+time.sleep(1)
+email.To = "rafaelzinhobr159@gmail.com"
+email.Subject = f"Pedidos Atrasados {Lista_fornecedores[0].Nome}" """
