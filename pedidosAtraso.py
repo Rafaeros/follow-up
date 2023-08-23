@@ -53,15 +53,16 @@ fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
 
 # Pegando os pedidos de cada fornecedor e separando
 Lista_fornecedores = []
-""" for fornecedor in fornecedores:
+
+for fornecedor in fornecedores:
     PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
         "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
     formatar_dados(PedidosAtrasados)
     Lista_fornecedores.append(Fornecedor(
-        fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados)) """
+        fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados))
 
     # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
-    # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
+    #PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
