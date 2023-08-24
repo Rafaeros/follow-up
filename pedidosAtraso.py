@@ -86,12 +86,57 @@ outlook = win32.Dispatch('outlook.application')
     print("Email enviado")
     time.sleep(1) """
 
-print(Lista_fornecedores[15].TotalPedidos)
+# print(Lista_fornecedores[15].TotalPedidos)
 
-pedidosAMPCSV = Lista_fornecedores[15].TotalPedidos.to_csv('PedidosAMPCSV.csv')
 
-""" 
+tableOrders = Lista_fornecedores[15].TotalPedidos.to_html(
+    col_space=50, justify='center')
+
+# print(tableOrders)
+
+style = """
+<style>
+
+* {
+padding: 5px;
+}
+
+thead {
+  text-align: center;
+  background-color: cadetblue;
+}
+
+tr, th,td {
+  text-align: center;
+  justify-content: center;
+}
+
+td:nth-child(5) {
+  text-align: left;
+  background-color: red;
+}
+</style>
+"""
+
+html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    {style}
+</head>
+<body>
+    <h1>Pedidos Atrasados:{Lista_fornecedores[15].Nome}</h1>
+    {tableOrders}
+</body>
+</html>
+"""
+
+print(html_body)
+
 email = outlook.CreateItem(0)
 time.sleep(1)
 email.To = "rafaelzinhobr159@gmail.com"
-email.Subject = f"Pedidos Atrasados {Lista_fornecedores[0].Nome}" """
+email.Subject = f"Pedidos Atrasados {Lista_fornecedores[15].Nome}"
+email.HTMLBody = (html_body)
+email.Send()
+print("Email enviado")
