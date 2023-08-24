@@ -70,33 +70,8 @@ for fornecedor in fornecedores:
 
 outlook = win32.Dispatch('outlook.application')
 
-""" for forncecedor in Lista_fornecedores:
-    time.sleep(1)
-    email = outlook.CreateItem(0)
-    time.sleep(1)
-    email.To = 'rafaelzinhobr159@gmail.com'
-    email.Subject = f"Pedidos atrasados {forncecedor.Nome}"
-    email.HTMLBody = f'''
-    <h3>Olá {fornecedor.Nome}, favor confirmar o envido destes pedidos que cosstam em atraso
-    no nosso sistema:</h3>
-
-    {forncecedor.TotalPedidos}
-    '''
-    email.Send()
-    print("Email enviado")
-    time.sleep(1) """
-
-# print(Lista_fornecedores[15].TotalPedidos)
-
-
-tableOrders = Lista_fornecedores[15].TotalPedidos.to_html(
-    col_space=50, justify='center')
-
-# print(tableOrders)
-
 style = """
 <style>
-
 * {
 padding: 5px;
 }
@@ -117,26 +92,28 @@ td:nth-child(5) {
 }
 </style>
 """
+for fornececedor in Lista_fornecedores:
 
-html_body = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    {style}
-</head>
-<body>
-    <h1>Pedidos Atrasados:{Lista_fornecedores[15].Nome}</h1>
-    {tableOrders}
-</body>
-</html>
-"""
-
-print(html_body)
-
-email = outlook.CreateItem(0)
-time.sleep(1)
-email.To = "rafaelzinhobr159@gmail.com"
-email.Subject = f"Pedidos Atrasados {Lista_fornecedores[15].Nome}"
-email.HTMLBody = (html_body)
-email.Send()
-print("Email enviado")
+    lateOrdersHTML = fornecedor.TotalPedidos.to_html(
+        col_space=50, justify='center')
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        {style}
+    </head>
+    <body>
+        <h1>Olá:{fornecedor.Nome}</h1>
+        <h2>Favor validar esses pedidos que constam em atraso nm nosso sistema: </h2>
+        {lateOrdersHTML}
+    </body>
+    </html>
+    """
+    email = outlook.CreateItem(0)
+    time.sleep(0.5)
+    email.To = 'rafaelzinhobr159@gmail.com'
+    email.Subject = f"Pedidos atrasados {fornececedor[0].Nome}"
+    email.HTMLBody = (html_body)
+    email.Send()
+    print(f"Email enviado: {fornecedor[0].Nome}")
+    time.sleep(0.5)
