@@ -1,7 +1,7 @@
 import pandas as pd
 import datetime as dt
 import time
-
+import win32com.client as win32
 
 # Pegando data de hoje
 data_hoje = dt.datetime.now()
@@ -29,6 +29,7 @@ class Fornecedor():
         self.Email = Email
         self.TotalPedidos = TotalPedidos
 
+
 Pedidos = pd.read_excel('EntregasPendentes10_07_2023.xlsx')
 
 Pedidos = Pedidos[Pedidos['Situação'] != 'Envio pendente']
@@ -42,7 +43,7 @@ Pedidos = Pedidos[Pedidos['Rateio'].isin(valoresRateio)]
 
 Pedidos.to_excel('PedidosAtraso.xlsx')
 
-time.sleep(1.5)
+time.sleep(3)
 
 tabelapd = pd.read_excel("./PedidosAtraso.xlsx")
 
@@ -51,22 +52,67 @@ tabelapd['Fornecedor'].to_string()
 fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
     subset="Fornecedor", keep="first").values.tolist()
 
+
 # Pegando os pedidos de cada fornecedor e separando
 Lista_fornecedores = []
-
 for fornecedor in fornecedores:
     PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
         "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
     formatar_dados(PedidosAtrasados)
     Lista_fornecedores.append(Fornecedor(
         fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados))
-
     # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
-    #PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
+    # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
-""" for fornc in Lista_fornecedores:
-    print(F'Nome: {fornc.Nome}')
-    print(F'Email: {fornc.Email}')
-    print(F'Nome: {fornc.TotalPedidos}') """
+
+
+outlook = win32.Dispatch('outlook.application')
+
+style = """
+<style>
+* {
+padding: 5px;
+}
+
+thead {
+  text-align: center;
+  background-color: cadetblue;
+}
+
+tr, th,td {
+  text-align: center;
+  justify-content: center;
+}
+
+td:nth-child(5) {
+  text-align: left;
+  background-color: red;
+}
+</style>
+"""
+for fornecedor in Lista_fornecedores:
+    lateOrdersHTML = fornecedor[0].TotalPedidos.to_html(
+        col_space=50, justify='center')
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        {style}
+    </head>
+    <body>
+        <h1>Olá:{fornecedor[0].Nome}</h1>
+        <h2>Favor validar esses pedidos que constam em atraso nm nosso sistema: </h2>
+        {lateOrdersHTML}
+    </body>
+    </html>
+    """
+    """email = outlook.CreateItem(0)
+    time.sleep(0.5)
+    email.To = 'rafaelzinhobr159@gmail.com'
+    email.Subject = f"Pedidos atrasados {fornececedor[0].Nome}"
+    email.HTMLBody = (html_body)
+    email.Send() """
+    print(f"Email enviado: {fornecedor.Nome}")
+    time.sleep(0.5)
