@@ -92,9 +92,8 @@ td:nth-child(5) {
 }
 </style>
 """
-for fornececedor in Lista_fornecedores:
-
-    lateOrdersHTML = fornecedor.TotalPedidos.to_html(
+for fornecedor in Lista_fornecedores:
+    lateOrdersHTML = fornecedor[0].TotalPedidos.to_html(
         col_space=50, justify='center')
     html_body = f"""
     <!DOCTYPE html>
@@ -103,17 +102,17 @@ for fornececedor in Lista_fornecedores:
         {style}
     </head>
     <body>
-        <h1>Olá:{fornecedor.Nome}</h1>
+        <h1>Olá:{fornecedor[0].Nome}</h1>
         <h2>Favor validar esses pedidos que constam em atraso nm nosso sistema: </h2>
         {lateOrdersHTML}
     </body>
     </html>
     """
-    email = outlook.CreateItem(0)
+    """email = outlook.CreateItem(0)
     time.sleep(0.5)
     email.To = 'rafaelzinhobr159@gmail.com'
     email.Subject = f"Pedidos atrasados {fornececedor[0].Nome}"
     email.HTMLBody = (html_body)
-    email.Send()
+    email.Send() """
     print(f"Email enviado: {fornecedor[0].Nome}")
     time.sleep(0.5)
