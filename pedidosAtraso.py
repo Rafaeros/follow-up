@@ -54,6 +54,8 @@ fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
 
 
 # Pegando os pedidos de cada fornecedor e separando
+
+# Pegando os pedidos de cada fornecedor e separando
 Lista_fornecedores = []
 for fornecedor in fornecedores:
     PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
@@ -66,7 +68,6 @@ for fornecedor in fornecedores:
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
-
 
 outlook = win32.Dispatch('outlook.application')
 
@@ -92,27 +93,8 @@ td:nth-child(5) {
 }
 </style>
 """
-for fornecedor in Lista_fornecedores:
-    lateOrdersHTML = fornecedor[0].TotalPedidos.to_html(
-        col_space=50, justify='center')
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        {style}
-    </head>
-    <body>
-        <h1>Olá:{fornecedor[0].Nome}</h1>
-        <h2>Favor validar esses pedidos que constam em atraso nm nosso sistema: </h2>
-        {lateOrdersHTML}
-    </body>
-    </html>
-    """
-    """email = outlook.CreateItem(0)
-    time.sleep(0.5)
-    email.To = 'rafaelzinhobr159@gmail.com'
-    email.Subject = f"Pedidos atrasados {fornececedor[0].Nome}"
-    email.HTMLBody = (html_body)
-    email.Send() """
-    print(f"Email enviado: {fornecedor.Nome}")
-    time.sleep(0.5)
+
+for fornc in Lista_fornecedores:
+    print(F'Nome: {fornc.Nome}')
+    print(F'Email: {fornc.Email}')
+    print(F'Nome: {fornc.TotalPedidos}')
