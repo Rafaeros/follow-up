@@ -68,33 +68,3 @@ for fornecedor in fornecedores:
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
-
-outlook = win32.Dispatch('outlook.application')
-
-style = """
-<style>
-* {
-padding: 5px;
-}
-
-thead {
-  text-align: center;
-  background-color: cadetblue;
-}
-
-tr, th,td {
-  text-align: center;
-  justify-content: center;
-}
-
-td:nth-child(5) {
-  text-align: left;
-  background-color: red;
-}
-</style>
-"""
-
-for fornc in Lista_fornecedores:
-    print(F'Nome: {fornc.Nome}')
-    print(F'Email: {fornc.Email}')
-    print(F'Nome: {fornc.TotalPedidos}')
