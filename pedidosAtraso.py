@@ -2,6 +2,7 @@ import pandas as pd
 import datetime as dt
 import time
 import win32com.client as win32
+from tkinter import *
 
 # Pegando data de hoje
 data_hoje = dt.datetime.now()
@@ -60,6 +61,7 @@ Lista_fornecedores = []
 for fornecedor in fornecedores:
     PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
         "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
+    PedidosAtrasados.index.name = "N"
     formatar_dados(PedidosAtrasados)
     Lista_fornecedores.append(Fornecedor(
         fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados))
@@ -70,6 +72,12 @@ for fornecedor in fornecedores:
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
 
 outlook = win32.Dispatch('outlook.application')
+
+""" script =
+<script>
+document.getElementsByTagName('th').firstChild.text = 'N°'
+</script> """
+
 
 style = """
 <style>
@@ -104,16 +112,17 @@ for fornc in Lista_fornecedores:
     </head>
     <body>
         <h1>Olá:{fornc.Nome}</h1>
-        <h2>Favor validar esses pedidos que constam em atraso nm nosso sistema: </h2>
+        <h2>Favor validar esses pedidos que constam em atraso em nosso sistema: </h2>
         {lateOrdersHTML}
     </body>
     </html>
     """
+    print(html_body)
     email = outlook.CreateItem(0)
     time.sleep(0.5)
-    email.To = 'rafaelzinhobr159@gmail.com'
+    email.To = 'joao.szlachta@edu.unifil.br'
     email.Subject = f"Pedidos atrasados {fornc.Nome}"
     email.HTMLBody = (html_body)
     email.Send()
     print(f"Email enviado: {fornc.Nome}")
-    time.sleep(0.5)
+    time.sleep(2)
