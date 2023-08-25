@@ -68,3 +68,52 @@ for fornecedor in fornecedores:
 
 # ---Printar no console os dados de cada fornecedor da classe Fornecedor
 # Lista_fornecedores.append(Fornecedor(fornecedor, "Teste@gmail.com", pedidosFornecedor))
+
+outlook = win32.Dispatch('outlook.application')
+
+style = """
+<style>
+* {
+padding: 5px;
+}
+
+thead {
+  text-align: center;
+  background-color: cadetblue;
+}
+
+tr, th,td {
+  text-align: center;
+  justify-content: center;
+}
+
+td:nth-child(5) {
+  text-align: left;
+  background-color: red;
+}
+</style>
+"""
+for fornc in Lista_fornecedores:
+    lateOrdersHTML = fornc.TotalPedidos.to_html(
+        col_space=50, justify='center')
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        {style}
+    </head>
+    <body>
+        <h1>Olá:{fornc.Nome}</h1>
+        <h2>Favor validar esses pedidos que constam em atraso nm nosso sistema: </h2>
+        {lateOrdersHTML}
+    </body>
+    </html>
+    """
+    email = outlook.CreateItem(0)
+    time.sleep(0.5)
+    email.To = 'rafaelzinhobr159@gmail.com'
+    email.Subject = f"Pedidos atrasados {fornc.Nome}"
+    email.HTMLBody = (html_body)
+    email.Send()
+    print(f"Email enviado: {fornc.Nome}")
+    time.sleep(0.5)
