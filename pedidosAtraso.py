@@ -91,10 +91,6 @@ def data_push_pandas():
             fornecedor[0], f"{fornecedor[0]}@gmail.com", lateOrders))
         # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
         # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
-    for fnc in lista_fornecedores:
-        print(fnc.Nome)
-        print(fnc.Email)
-        print(fnc.TotalPedidos)
 
 
 """ time.sleep(3)
