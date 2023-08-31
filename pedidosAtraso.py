@@ -49,19 +49,16 @@ def userInterface():
     janela.mainloop()
 
 
-def formatar_dados(Pedidos):
-    Pedidos.pop(Pedidos.columns[0])
+def formatar_dados(Orders):
+    Orders.pop(Orders.columns[0])
 
-    Pedidos.index += 1
+    Orders.index += 1
 
-    Pedidos['Data de entrega'] = pd.to_datetime(
-        Pedidos['Data de entrega'], format='%d/%m/%Y')
+    Orders['Data de entrega'] = pd.to_datetime(
+        Orders['Data de entrega'], format='%d/%m/%Y')
 
-    Pedidos['Data de entrega'] = Pedidos["Data de entrega"].dt.strftime(
+    Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime(
         "%d/%m/%Y   ")
-
-    # Caso queira criar arquivo excel
-    # Pedidos.to_excel('Pedidos.xlsx')
 
 
 def data_push_pandas():
@@ -79,6 +76,25 @@ def data_push_pandas():
 
     # Pedidos.to_excel('PedidosAtraso.xlsx')
     Pedidos['Fornecedor'].to_string()
+    fornecedores = Pedidos.loc[:, ['Fornecedor']].drop_duplicates(
+        subset="Fornecedor", keep="first").values.tolist()
+    print(fornecedores)
+
+    lista_fornecedores = []
+    for fornecedor in fornecedores:
+        lateOrders = Pedidos.loc[Pedidos['Fornecedor'] == fornecedor[0], [
+            "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
+        lateOrders.index.name = "N"
+        formatar_dados(lateOrders)
+
+        lista_fornecedores.append(Fornecedor(
+            fornecedor[0], f"{fornecedor[0]}@gmail.com", lateOrders))
+        # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
+        # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
+    for fnc in lista_fornecedores:
+        print(fnc.Nome)
+        print(fnc.Email)
+        print(fnc.TotalPedidos)
 
 
 """ time.sleep(3)
