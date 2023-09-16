@@ -6,10 +6,14 @@ import win32com.client as win32
 # from tkinter import Tk, Button, filedialog
 import tkinter as tk
 from tkinter import filedialog
-import sendEmail
+import chardet
+
 
 # Pegando data de hoje
 data_hoje = dt.datetime.now()
+data_hoje = data_hoje.strftime('%d/%m/%Y')
+print(type(data_hoje))
+print(data_hoje)
 # Criando a classe para fornecedores / pedidos / emails
 
 
@@ -23,24 +27,43 @@ class Fornecedor():
 def userInterface():
     janela = tk.Tk()
     janela.title("FollowUp F&K")
-    janela.geometry("500x500")
+    janela.geometry("350x400")
     janela.resizable(False, False)
     string_path = tk.StringVar()
     string_path.set("Arquivo Selecionado")
 
+    def add_email_file():
+        global email_file_path
+        email_file_path = filedialog.askopenfilenames()
+        print(email_file_path)
+        email_file_path = "".join(email_file_path)
+
     def add_file():
         global file_path
         file_path = filedialog.askopenfilenames()
-        print('tuple', file_path)
+        print(file_path)
         file_path = "".join(file_path)
         string_path.set(file_path)
 
+    step_1 = tk.Label(janela, text="1° Passo")
+    step_1.pack(pady=10)
+
+    emailDialogButton = tk.Button(
+        janela, text="Adicionar Arquivo C/ Emails", command=add_email_file)
+    emailDialogButton.pack(pady=10)
+
+    step_2 = tk.Label(janela, text="2° Passo")
+    step_2.pack(pady=10)
+
     fileDialogButton = tk.Button(
-        janela, text="Adicionar Arquivo", command=add_file)
-    fileDialogButton.pack(pady=20)
+        janela, text="Adicionar Arquivo C/ Pedidos", command=add_file)
+    fileDialogButton.pack(pady=10)
 
     selectlabel = tk.Label(janela, textvariable=string_path)
-    selectlabel.pack()
+    selectlabel
+
+    step_3 = tk.Label(janela, text="3° Passo")
+    step_3.pack(pady=30)
 
     send_emails = tk.Button(janela, text="Enviar Emails",
                             command=data_push_pandas)
@@ -62,23 +85,23 @@ def formatar_dados(Orders):
 
 
 def data_push_pandas():
-    print("PATH DENTRO DO PANDAS", file_path)
+
+    suppliers_data = pd.read_excel(email_file_path)
+    email_data = suppliers_data[["Nome", "Email"]]
+
     Pedidos = pd.read_excel(file_path)
-    print(Pedidos)
     Pedidos = Pedidos[Pedidos['Situação'] != 'Envio pendente']
-
     Pedidos = Pedidos[Pedidos['Nacionalidade'] == 'Brasil']
-
     valoresRateio = ['MATERIA-PRIMA',
                      'MATERIA PRIMA INDUSTRIALIZAÇÃO', 'MATERIAL DE USO E CONSUMO']
-
     Pedidos = Pedidos[Pedidos['Rateio'].isin(valoresRateio)]
+    Pedidos = Pedidos[Pedidos['Data de entrega'] < data_hoje]
 
-    # Pedidos.to_excel('PedidosAtraso.xlsx')
+    print(Pedidos)
+
     Pedidos['Fornecedor'].to_string()
     fornecedores = Pedidos.loc[:, ['Fornecedor']].drop_duplicates(
         subset="Fornecedor", keep="first").values.tolist()
-    print(fornecedores)
 
     lista_fornecedores = []
     for fornecedor in fornecedores:
@@ -87,38 +110,15 @@ def data_push_pandas():
         lateOrders.index.name = "N"
         formatar_dados(lateOrders)
 
+        current_email = email_data.loc[email_data['Nome']
+                                       == fornecedor[0], ["Email"]]
+
+        print(current_email)
+
         lista_fornecedores.append(Fornecedor(
-            fornecedor[0], f"{fornecedor[0]}@gmail.com", lateOrders))
-        # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
-        # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
+            fornecedor[0], f"", lateOrders))
 
 
-""" time.sleep(3)
-
-tabelapd = pd.read_excel("./PedidosAtraso.xlsx")
-
-tabelapd['Fornecedor'].to_string()
-# Puxando fornecedores sem duplicatas
-fornecedores = tabelapd.loc[:, ['Fornecedor']].drop_duplicates(
-    subset="Fornecedor", keep="first").values.tolist()
-
-# Pegando os pedidos de cada fornecedor e separando
-Lista_fornecedores = []
-for fornecedor in fornecedores:
-    PedidosAtrasados = tabelapd.loc[tabelapd['Fornecedor'] == fornecedor[0], [
-        "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
-    PedidosAtrasados.index.name = "N"
-    formatar_dados(PedidosAtrasados)
-    Lista_fornecedores.append(Fornecedor(
-        fornecedor[0], f"{fornecedor[0]}@gmail.com", PedidosAtrasados))
     # Comando para gerar arquivos excel bom base nos pedidos e nomes de cada fornecedor
     # PedidosAtrasados.to_excel(f'Pedidos{fornecedor[0]}.xlsx')
-
-outlook = win32.Dispatch('outlook.application') """
-
-""" script =
-<script>
-document.getElementsByTagName('th').firstChild.text = 'N°'
-</script> """
-
 userInterface()
