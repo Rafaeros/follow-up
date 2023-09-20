@@ -46,12 +46,19 @@ class pTopLevel():
     def __init__(self):
         self.window = customtkinter.CTkToplevel()
         self.window.title("Enviando emails preventivos...")
-        self.window.geometry("400x400")
+        self.window.iconbitmap("./fk-logo.ico")
+        self.window.geometry("600x600")
 
         self.cancelButton = customtkinter.CTkButton(self.window,text="Cancelar", command=self.window.destroy)
         self.cancelButton.pack(pady=10)
 
-        self.sendButton = customtkinter.CTkButton(self.window, text="Enviar Email", command=sendCorrectiveEmail)
+        self.pListBox = CTkListbox(self.window,width=500)
+        for preventiveSupplier_name in preventiveSuppliers_name:
+            self.pListBox.insert("END",f"{preventiveSupplier_name}")
+        
+        self.pListBox.pack(pady=10)
+
+        self.sendButton = customtkinter.CTkButton(self.window, text="Enviar Email", command=lambda: sendCorrectiveEmail(preventiveSuppliers_List))
         self.sendButton.pack(pady=10)
 
 
@@ -152,7 +159,8 @@ def data_push():
         preventiveSuppliers_name = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
             subset="Fornecedor", keep="first").values.tolist()
 
-        lateSuppliers_List = []
+        global preventiveSuppliers_List
+        preventiveSuppliers_List = []
         for pSupplier_name in preventiveSuppliers_name:
             lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == pSupplier_name[0], [
                 "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
@@ -160,11 +168,11 @@ def data_push():
 
             pCurrent_email = emails_data.loc[emails_data['Nome'] == pSupplier_name[0], [
                 "Email"]]
-            lateSuppliers_List.append(
+            preventiveSuppliers_List.append(
                 Supplier(pSupplier_name[0], f"{pCurrent_email}", lateOrders))
             # Supplier(Name, Email, Totalorders)
 
-        for pSupplier_name in lateSuppliers_List:
+        for pSupplier_name in preventiveSuppliers_List:
             print(pSupplier_name.Name)
             print(pSupplier_name.Email)
             print(pSupplier_name.TotalOrders)
@@ -173,6 +181,7 @@ def data_push():
         correctiveSuppliers_Name = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
             subset="Fornecedor", keep="first").values.tolist()
         
+        global correctiveSuppliers_List
         correctiveSuppliers_List = []
         for cSupplier_name in correctiveSuppliers_Name:
             preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == cSupplier_name[0], [
