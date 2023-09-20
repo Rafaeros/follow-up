@@ -6,6 +6,7 @@ import win32com.client as win32
 import tkinter as tk
 import customtkinter
 from customtkinter import filedialog
+from CTkListbox import *
 
 # Getting today date
 today_date = dt.datetime.now()
@@ -44,10 +45,14 @@ class Supplier():
 class pTopLevel():
     def __init__(self):
         self.window = customtkinter.CTkToplevel()
-        self.geometry("300x300")
-        self.title("Enviando emails preventivos...")
-        self.cancelButton = customtkinter.CTkButton(self,text="Cancelar", command=self.destroy)
+        self.window.title("Enviando emails preventivos...")
+        self.window.geometry("400x400")
+
+        self.cancelButton = customtkinter.CTkButton(self.window,text="Cancelar", command=self.window.destroy)
         self.cancelButton.pack(pady=10)
+
+        self.sendButton = customtkinter.CTkButton(self.window, text="Enviar Email", command=sendCorrectiveEmail)
+        self.sendButton.pack(pady=10)
 
 
 class interface():
@@ -98,62 +103,14 @@ class interface():
     
     def addPreventiveWindow(self):
         self.pTopLevel = pTopLevel()
+        self.pTopLevel.window.grab_set()
         self.pTopLevel.window.mainloop()
 
     def clickevent(self, click):
         global sendChoose
         sendChoose = click
         data_push()
-        self.addPreventiveWindow
-
-
-
-    
-
-
-""" def userInterface():
-    window = customtkinter.CTk()
-    window.title("FollowUp F&K")
-    window.geometry("400x450")
-    window.iconbitmap(default='./fk-logo.ico')
-    window.resizable(False, False)
-
-    def add_email_file():
-        global email_data_filepath
-        email_data_filepath = customtkinter.filedialog.askopenfilename()
-        email_data_filepath = "".join(email_data_filepath)
-
-    def add_file():
-        global orders_data_filepath
-        orders_data_filepath = customtkinter.filedialog.askopenfilename()
-        orders_data_filepath = "".join(orders_data_filepath)
-
-    step_1 = customtkinter.CTkLabel(window, text="1° Passo")
-    step_1.pack(pady=30)
-
-    emailDialogButton = customtkinter.CTkButton(
-        window, text="Adicionar Arquivo C/ Emails", command=add_email_file)
-    emailDialogButton.pack(pady=10)
-
-    step_2 = customtkinter.CTkLabel(window, text="2° Passo")
-    step_2.pack(pady=10)
-
-    fileDialogButton = customtkinter.CTkButton(
-        window, text="Adicionar Arquivo C/ Pedidos", command=add_file)
-    fileDialogButton.pack(pady=10)
-
-    step_3 = customtkinter.CTkLabel(window, text="3° Passo")
-    step_3.pack(pady=10)
-
-    sendlateOrder_emails = customtkinter.CTkButton(window, text="Enviar Emails Atrasados",
-                                     command=lambda m="corrective": clickevent(m))
-    sendlateOrder_emails.pack(pady=10)
-
-    sendPreventive_emails = customtkinter.CTkButton(
-        window, text="Enviar Emails Preventivos", command=lambda m="preventive": clickevent(m))
-    sendPreventive_emails.pack(pady=10)
-
-    window.mainloop() """
+        self.addPreventiveWindow()
 
 def format_data(Orders):
     Orders.pop(Orders.columns[0])
