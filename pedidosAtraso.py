@@ -5,11 +5,11 @@ import time
 import win32com.client as win32
 import tkinter as tk
 import customtkinter
-from customtkinter import filedialog
 from CTkListbox import *
 
 # Getting today date
 today_date = dt.datetime.now()
+iconpath = "./fk-logo.ico"
 
 # Email style
 style = """
@@ -35,40 +35,60 @@ td:nth-child(5) {
 </style>
 """
 
-
 class Supplier():
     def __init__(self, Name, Email, TotalOrders):
         self.Name = Name
         self.Email = Email
         self.TotalOrders = TotalOrders
 
-class pTopLevel():
+class cTopLevel():
     def __init__(self):
         self.window = customtkinter.CTkToplevel()
-        self.window.title("Enviando emails preventivos...")
-        self.window.iconbitmap("./fk-logo.ico")
+        self.window.title("Enviando emails corretivos...")
+        self.window.geometry("800x600")
+        self.window.columnconfigure(0,weight=3)
+        self.window.columnconfigure(1,weight=3)
+        self.window.columnconfigure(2,weight=3)
+        self.window.rowconfigure(0, weight=5)
+        self.window.rowconfigure(1, weight=2)
+        self.window.rowconfigure(2, weight=3)
+
+        self.pListBox = CTkListbox(self.window,width=500, height=300)
+        for correctiveSupplier_name in correctiveSuppliers_Names:
+            self.pListBox.insert("END",f"{correctiveSupplier_name}")
+        self.pListBox.grid(column=1, row=0, pady=20)
+
+        self.deleteButton = customtkinter.CTkButton(self.window, text="Deletar", command=self.deleteSelectedItem)
+        self.deleteButton.grid(row=1, column=1, pady=10, padx=10)
+
+        self.cancelButton = customtkinter.CTkButton(self.window,text="Cancelar", command=self.window.destroy, width=300, height=50)
+        self.cancelButton.grid(row=3, column=0, pady=40, padx=40)
+        self.sendButton = customtkinter.CTkButton(self.window, text="Enviar Email", command=lambda: sendCorrectiveEmail(correctiveSuppliers_List), width=300, height=50)
+        self.sendButton.grid(row=3, column=2, pady=40, padx=40)
+
+    def deleteSelectedItem(self):
+        index = self.pListBox.curselection()
+        self.pListBox.delete(index)
+        correctiveSuppliers_List.pop(index)
+        for name in correctiveSuppliers_List:
+            print(name.Name)
+
+class pTopLevel():
+    def __init__(self):
+        self.title("Enviando emails preventivos...")
         self.window.geometry("600x600")
 
-        self.cancelButton = customtkinter.CTkButton(self.window,text="Cancelar", command=self.window.destroy)
-        self.cancelButton.pack(pady=10)
-
-        self.pListBox = CTkListbox(self.window,width=500)
-        for preventiveSupplier_name in preventiveSuppliers_name:
-            self.pListBox.insert("END",f"{preventiveSupplier_name}")
-        
-        self.pListBox.pack(pady=10)
-
-        self.sendButton = customtkinter.CTkButton(self.window, text="Enviar Email", command=lambda: sendCorrectiveEmail(preventiveSuppliers_List))
-        self.sendButton.pack(pady=10)
-
+        cListBox = CTkListbox(self.window,width=500)
+        for preventiveSuppliers_Name in preventiveSuppliers_Names:
+            cListBox.insert("END",f"{preventiveSuppliers_Name}")
+        cListBox.pack(pady=0)
 
 class interface():
     def __init__(self, master):
         self.master = master
         master.title("Follow Up F&K Group")
         master.geometry("500x500")
-        master.iconbitmap(default="./fk-logo.ico")
-
+        master.iconbitmap(iconpath)
 
         self.appearance = customtkinter.set_appearance_mode("Dark")
         self.theme = customtkinter.set_default_color_theme("dark-blue")
@@ -109,15 +129,25 @@ class interface():
         orders_data_filepath = "".join(orders_data_filepath)
     
     def addPreventiveWindow(self):
-        self.pTopLevel = pTopLevel()
+        self.pTopLevel = ""
+        self.icon.iconbitmap("./fk-log.ico")
         self.pTopLevel.window.grab_set()
         self.pTopLevel.window.mainloop()
+    
+    def addCorrectiveWindow(self):
+        self.cTopLevel = cTopLevel()
+        self.cTopLevel.window.grab_set()
+        self.cTopLevel.window.mainloop()
+
 
     def clickevent(self, click):
         global sendChoose
         sendChoose = click
         data_push()
-        self.addPreventiveWindow()
+        if(sendChoose=="corrective"):
+            self.addCorrectiveWindow()
+        elif(sendChoose=="preventive"):
+            self.addPreventiveWindow()
 
 def format_data(Orders):
     Orders.pop(Orders.columns[0])
@@ -155,44 +185,48 @@ def data_push():
 
     if (sendChoose == "corrective"):
         print("Enviando emails atrasados")
-        global preventiveSuppliers_name
-        preventiveSuppliers_name = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
+
+        global correctiveSuppliers_Names
+        global correctiveSuppliers_List
+
+        correctiveSuppliers_Names = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
             subset="Fornecedor", keep="first").values.tolist()
 
-        global preventiveSuppliers_List
-        preventiveSuppliers_List = []
-        for pSupplier_name in preventiveSuppliers_name:
-            lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == pSupplier_name[0], [
+        correctiveSuppliers_List = []
+        for correctiveSupplier_Name in correctiveSuppliers_Names:
+            lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == correctiveSupplier_Name[0], [
                 "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
             format_data(lateOrders)
 
-            pCurrent_email = emails_data.loc[emails_data['Nome'] == pSupplier_name[0], [
+            pCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], [
                 "Email"]]
-            preventiveSuppliers_List.append(
-                Supplier(pSupplier_name[0], f"{pCurrent_email}", lateOrders))
+            correctiveSuppliers_List.append(
+                Supplier(correctiveSupplier_Name[0], f"{pCurrent_email}", lateOrders))
             # Supplier(Name, Email, Totalorders)
 
-        for pSupplier_name in preventiveSuppliers_List:
-            print(pSupplier_name.Name)
-            print(pSupplier_name.Email)
-            print(pSupplier_name.TotalOrders)
+            for names in correctiveSuppliers_List:
+                print(names.Name)
+                print(names.Email)
+                print(names.TotalOrders)
 
     elif (sendChoose == "preventive"):
-        correctiveSuppliers_Name = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
+        global preventiveSuppliers_Names
+        global preventiveSuppliers_List
+
+        preventiveSuppliers_Names = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
             subset="Fornecedor", keep="first").values.tolist()
         
-        global correctiveSuppliers_List
-        correctiveSuppliers_List = []
-        for cSupplier_name in correctiveSuppliers_Name:
-            preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == cSupplier_name[0], [
+        preventiveSuppliers_List = []
+        for preventiveSupplier_Name in preventiveSuppliers_Names:
+            preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == correctiveSupplier_Name[0], [
                 "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]]
             preventiveOrders.index.name = "N"
             format_data(preventiveOrders)
 
-            cCurrent_email = emails_data.loc[emails_data['Nome'] == cSupplier_name[0], ["Email"]]
+            cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], ["Email"]]
 
             correctiveSuppliers_List.append(
-                Supplier(cSupplier_name[0], cCurrent_email, preventiveOrders))
+                Supplier(correctiveSupplier_Name[0], cCurrent_email, preventiveOrders))
             #Class Supplier(Name, Email, Orders)
 
         # Comando para gerar arquivos excel bom base nos total_late_orders e nomes de cada fornecedor
