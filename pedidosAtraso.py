@@ -58,7 +58,7 @@ class cTopLevel():
             self.pListBox.insert("END",f"{correctiveSupplier_name}")
         self.pListBox.grid(column=1, row=0, pady=20)
 
-        self.deleteButton = customtkinter.CTkButton(self.window, text="Deletar", command=self.deleteSelectedItem)
+        self.deleteButton = customtkinter.CTkButton(self.window, text="Deletar", command=self.deleteSelectedItem, fg_color="#FF0000", text_color="white", hover_color="#990000")
         self.deleteButton.grid(row=1, column=1, pady=10, padx=10)
 
         self.cancelButton = customtkinter.CTkButton(self.window,text="Cancelar", command=self.window.destroy, width=300, height=50)
@@ -234,6 +234,7 @@ def data_push():
 
 def sendCorrectiveEmail(suppliersList):
     outlook = win32.Dispatch("Outlook.Application")
+    ccEmail = ["glaucio.costa@fkgroup.com.br","luciana.santos@fkgroup.com.br", "guilherme.silva@fkgroup.com.br"]
     time.sleep(1)
     for supplier in suppliersList:
         lateOrdersHTML = supplier.TotalOrders.to_html(
@@ -254,7 +255,8 @@ def sendCorrectiveEmail(suppliersList):
         print(correctiveEmailBody)
         email = outlook.CreateItem(0)
         time.sleep(1)
-        email.To = 'rafaelzinhobr159@gmail.com'
+        email.To = f'{supplier.Email}'
+        email.Cc = ccEmail
         email.Subject = f"Pedidos atrasados {supplier.Name}"
         email.HTMLBody = (correctiveEmailBody)
         email.Send()
