@@ -6,10 +6,12 @@ import win32com.client as win32
 import tkinter as tk
 import customtkinter
 from CTkListbox import *
+import CTkMessagebox
+import pygame
 
 # Getting today date
 today_date = dt.datetime.now()
-iconpath = "./fk-logo.ico"
+iconpath = 'fk-logo.ico'
 
 # Email style
 style = """
@@ -53,6 +55,8 @@ class cTopLevel():
         self.window.rowconfigure(1, weight=2)
         self.window.rowconfigure(2, weight=3)
 
+        self.deletedSuppliers = []
+
         self.pListBox = CTkListbox(self.window,width=500, height=300)
         for correctiveSupplier_name in correctiveSuppliers_Names:
             self.pListBox.insert("END",f"{correctiveSupplier_name}")
@@ -69,9 +73,21 @@ class cTopLevel():
     def deleteSelectedItem(self):
         index = self.pListBox.curselection()
         self.pListBox.delete(index)
+        self.cDeletedSuppliers.append(correctiveSuppliers_List[index])
+        print(self.deletedSuppliers)
+        print("Adicionando itens deletados a outra lista para futura restauração")
+        for names in self.cDeletedSuppliers:
+            print(names.Name)
+            print(names.Email)
         correctiveSuppliers_List.pop(index)
+        print("Lista dos fornecedores atraso após o delete:")
         for name in correctiveSuppliers_List:
             print(name.Name)
+
+    def restoreLastDeletedeSupplier(self):
+        if(len(self.cDeletedSuppliers)==0):
+            pass
+        pass
 
 class pTopLevel():
     def __init__(self):
@@ -88,10 +104,10 @@ class interface():
         self.master = master
         master.title("Follow Up F&K Group")
         master.geometry("500x500")
-        master.iconbitmap(iconpath)
+        pygame.mixer.init()
 
-        self.appearance = customtkinter.set_appearance_mode("Dark")
-        self.theme = customtkinter.set_default_color_theme("dark-blue")
+        #self.appearance = customtkinter.set_appearance_mode("Dark")
+        #self.theme = customtkinter.set_default_color_theme("dark-blue")
 
         self.step_1 = customtkinter.CTkLabel(master, text="1° Passo")
         self.step_1.pack(pady=30)
@@ -110,8 +126,7 @@ class interface():
         self.step_3 = customtkinter.CTkLabel(master, text="3° Passo")
         self.step_3.pack(pady=10)
 
-        self.sendlateOrder_emails = customtkinter.CTkButton(master, text="Enviar Emails Atrasados",
-                                        command=lambda m="corrective": self.clickevent(m))
+        self.sendlateOrder_emails = customtkinter.CTkButton(master, text="Enviar Emails Atrasados", command=lambda m="corrective": self.clickevent(m))
         self.sendlateOrder_emails.pack(pady=10)
 
         self.sendPreventive_emails = customtkinter.CTkButton(
@@ -122,11 +137,13 @@ class interface():
         global email_data_filepath
         email_data_filepath = customtkinter.filedialog.askopenfilename()
         email_data_filepath = "".join(email_data_filepath)
+        self.selectedArchive(email_data_filepath)
 
     def add_file(self):
         global orders_data_filepath
         orders_data_filepath = customtkinter.filedialog.askopenfilename()
         orders_data_filepath = "".join(orders_data_filepath)
+        self.selectedArchive(orders_data_filepath)
     
     def addPreventiveWindow(self):
         self.pTopLevel = ""
@@ -139,7 +156,6 @@ class interface():
         self.cTopLevel.window.grab_set()
         self.cTopLevel.window.mainloop()
 
-
     def clickevent(self, click):
         global sendChoose
         sendChoose = click
@@ -148,6 +164,35 @@ class interface():
             self.addCorrectiveWindow()
         elif(sendChoose=="preventive"):
             self.addPreventiveWindow()
+    
+    def selectedArchive(self, path):
+        self.archiveTopLevel = customtkinter.CTkToplevel()
+        self.archiveTopLevel.grab_set()
+        self.archiveTopLevel.title("Arquivo selecionado")
+        self.archiveTopLevel.geometry("300x200")
+
+        self.playNotificationSound()
+
+        #Shows "Selected Arqhive" in the window
+        self.selectedArchiveLabel = customtkinter.CTkLabel(self.archiveTopLevel, text="Arquivo selecionado:", pady=10,padx=10)
+        self.selectedArchiveLabel.pack(pady=10,padx=10)
+
+        #splits the file path
+        self.splitFilePath = path.split('/')
+        splitLen = len(self.splitFilePath)-1
+        
+        underlineText = customtkinter.CTkFont(underline=True)
+
+        #Archive name label show
+        self.selectedArchiveNameLabel = customtkinter.CTkLabel(self.archiveTopLevel, text=f'{self.splitFilePath[splitLen]}', font=underlineText)
+        self.selectedArchiveNameLabel.pack(pady=10, padx=10)
+
+        self.okButton = customtkinter.CTkButton(self.archiveTopLevel, text="OK", command=self.archiveTopLevel.destroy)
+        self.okButton.pack(pady=20, padx=20)
+
+    def playNotificationSound(self):
+        pygame.mixer.music.load('./Notify.wav')
+        pygame.mixer.music.play(loops=0)
 
 def format_data(Orders):
     Orders.pop(Orders.columns[0])
@@ -293,5 +338,6 @@ def sendPreventiveEmail(suppliersList):
         time.sleep(2)
 
 root = customtkinter.CTk()
+root.iconbitmap(iconpath)
 userinterface = interface(root)
 root.mainloop()
