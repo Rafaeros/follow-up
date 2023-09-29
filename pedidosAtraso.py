@@ -55,9 +55,7 @@ class cTopLevel():
         self.window.rowconfigure(1, weight=2)
         self.window.rowconfigure(2, weight=3)
 
-        self.deletedSuppliers = []
-
-        self.pListBox = CTkListbox(self.window,width=500, height=300)
+        self.pListBox = CTkListbox(self.window, width=500, height=300, text_color="black")
         for correctiveSupplier_name in correctiveSuppliers_Names:
             self.pListBox.insert("END",f"{correctiveSupplier_name}")
         self.pListBox.grid(column=1, row=0, pady=20)
@@ -71,10 +69,11 @@ class cTopLevel():
         self.sendButton.grid(row=3, column=2, pady=40, padx=40)
 
     def deleteSelectedItem(self):
+        self.cDeletedSuppliers = []
         index = self.pListBox.curselection()
         self.pListBox.delete(index)
         self.cDeletedSuppliers.append(correctiveSuppliers_List[index])
-        print(self.deletedSuppliers)
+        print(self.cDeletedSuppliers)
         print("Adicionando itens deletados a outra lista para futura restauração")
         for names in self.cDeletedSuppliers:
             print(names.Name)
