@@ -6,7 +6,6 @@ import win32com.client as win32
 import tkinter as tk
 import customtkinter
 from CTkListbox import *
-import CTkMessagebox
 import pygame
 
 # Getting today date
@@ -43,70 +42,20 @@ class Supplier():
         self.Email = Email
         self.TotalOrders = TotalOrders
 
-class cTopLevel():
-    def __init__(self):
-        self.window = customtkinter.CTkToplevel()
-        self.window.title("Enviando emails corretivos...")
-        self.window.geometry("800x600")
-        self.window.columnconfigure(0,weight=3)
-        self.window.columnconfigure(1,weight=3)
-        self.window.columnconfigure(2,weight=3)
-        self.window.rowconfigure(0, weight=5)
-        self.window.rowconfigure(1, weight=2)
-        self.window.rowconfigure(2, weight=3)
-
-        self.pListBox = CTkListbox(self.window, width=500, height=300, text_color="black")
-        for correctiveSupplier_name in correctiveSuppliers_Names:
-            self.pListBox.insert("END",f"{correctiveSupplier_name}")
-        self.pListBox.grid(column=1, row=0, pady=20)
-
-        self.deleteButton = customtkinter.CTkButton(self.window, text="Deletar", command=self.deleteSelectedItem, fg_color="#FF0000", text_color="white", hover_color="#990000")
-        self.deleteButton.grid(row=1, column=1, pady=10, padx=10)
-
-        self.cancelButton = customtkinter.CTkButton(self.window,text="Cancelar", command=self.window.destroy, width=300, height=50)
-        self.cancelButton.grid(row=3, column=0, pady=40, padx=40)
-        self.sendButton = customtkinter.CTkButton(self.window, text="Enviar Email", command=lambda: sendCorrectiveEmail(correctiveSuppliers_List), width=300, height=50)
-        self.sendButton.grid(row=3, column=2, pady=40, padx=40)
-
-    def deleteSelectedItem(self):
-        self.cDeletedSuppliers = []
-        index = self.pListBox.curselection()
-        self.pListBox.delete(index)
-        self.cDeletedSuppliers.append(correctiveSuppliers_List[index])
-        print(self.cDeletedSuppliers)
-        print("Adicionando itens deletados a outra lista para futura restauração")
-        for names in self.cDeletedSuppliers:
-            print(names.Name)
-            print(names.Email)
-        correctiveSuppliers_List.pop(index)
-        print("Lista dos fornecedores atraso após o delete:")
-        for name in correctiveSuppliers_List:
-            print(name.Name)
-
-    def restoreLastDeletedeSupplier(self):
-        if(len(self.cDeletedSuppliers)==0):
-            pass
-        pass
-
-class pTopLevel():
-    def __init__(self):
-        self.title("Enviando emails preventivos...")
-        self.window.geometry("600x600")
-
-        cListBox = CTkListbox(self.window,width=500)
-        for preventiveSuppliers_Name in preventiveSuppliers_Names:
-            cListBox.insert("END",f"{preventiveSuppliers_Name}")
-        cListBox.pack(pady=0)
-
 class interface():
     def __init__(self, master):
+
+        #Declarating variables
+        self.cDeletedSuppliers = []
+        self.index = -5
+
         self.master = master
         master.title("Follow Up F&K Group")
         master.geometry("500x500")
         pygame.mixer.init()
 
-        #self.appearance = customtkinter.set_appearance_mode("Dark")
-        #self.theme = customtkinter.set_default_color_theme("dark-blue")
+        self.appearance = customtkinter.set_appearance_mode("Dark")
+        self.theme = customtkinter.set_default_color_theme("dark-blue")
 
         self.step_1 = customtkinter.CTkLabel(master, text="1° Passo")
         self.step_1.pack(pady=30)
@@ -151,10 +100,36 @@ class interface():
         self.pTopLevel.window.mainloop()
     
     def addCorrectiveWindow(self):
-        self.cTopLevel = cTopLevel()
-        self.cTopLevel.window.grab_set()
-        self.cTopLevel.window.mainloop()
+        #Window configuration
+        self.cTopLevel = customtkinter.CTkToplevel()
+        self.cTopLevel.title("Enviando emails corretivos...")
+        self.cTopLevel.geometry("800x600")
+        self.cTopLevel.grab_set()
+        self.cTopLevel.columnconfigure(0, weight=3)
+        self.cTopLevel.columnconfigure(1, weight=3)
+        self.cTopLevel.columnconfigure(2, weight=3)
+        self.cTopLevel.rowconfigure(0, weight=5)
+        self.cTopLevel.rowconfigure(1, weight=2)
+        self.cTopLevel.rowconfigure(2, weight=3)
+        self.cTopLevel.rowconfigure(3, weight=3)
+        self.cTopLevel.rowconfigure(4, weight=3)
 
+        self.cListBox = CTkListbox(self.cTopLevel, width=500, height=300)
+        for correctiveSupplier_name in correctiveSuppliers_Names:
+            self.cListBox.insert("END",correctiveSupplier_name)
+        self.cListBox.grid(row=0, column=1, pady=10)
+
+        self.restoreButton = customtkinter.CTkButton(self.cTopLevel, text="Restaurar", command=self.restoreListTopLevel)
+        self.restoreButton.grid(row=1, column=0, pady=10, padx=10)
+        
+        self.deleteButton = customtkinter.CTkButton(self.cTopLevel, text="Deletar", command=self.deleteSelectedItem, fg_color="#FF0000", text_color="white", hover_color="#990000")
+        self.deleteButton.grid(row=1, column=2, pady=10, padx=10)
+
+        self.cancelButton = customtkinter.CTkButton(self.cTopLevel,text="Cancelar", command=self.cTopLevel.destroy, width=300, height=50)
+        self.cancelButton.grid(row=3, column=0, pady=40, padx=40)
+        self.sendButton = customtkinter.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: sendCorrectiveEmail(correctiveSuppliers_List), width=300, height=50)
+        self.sendButton.grid(row=3, column=2, pady=40, padx=40)
+        
     def clickevent(self, click):
         global sendChoose
         sendChoose = click
@@ -188,6 +163,68 @@ class interface():
 
         self.okButton = customtkinter.CTkButton(self.archiveTopLevel, text="OK", command=self.archiveTopLevel.destroy)
         self.okButton.pack(pady=20, padx=20)
+
+    def deleteSelectedItem(self):
+        self.index = self.cListBox.curselection()
+        self.cListBox.delete(self.index)
+
+        for supplier in correctiveSuppliers_List:
+            if(supplier.Name==correctiveSuppliers_List[self.index].Name):
+                self.cDeletedSuppliers.append(correctiveSuppliers_List[self.index])
+                break
+
+        
+        print("Fornecedor deletado")
+        print(correctiveSuppliers_List[self.index].Name)
+
+        correctiveSuppliers_List.pop(self.index)
+
+        print("Lista após o delete")
+        for supplier in correctiveSuppliers_List:
+            print(supplier.Name)
+        print(f"Tamanho lista: {len(correctiveSuppliers_List)}")
+
+    def restoreListTopLevel(self):
+        lastDeletedSupplier = len(self.cDeletedSuppliers)
+        if(lastDeletedSupplier==0):
+            self.emptyListTopLevel = customtkinter.CTkToplevel()
+            self.emptyListTopLevel.title("Erro")
+            self.emptyListTopLevel.geometry("300x200")
+            self.emptyListTopLevel.grab_set()
+            self.emptyListLabel = customtkinter.CTkLabel(self.emptyListTopLevel, text="Nenhum fornecedor foi deletado anteriormente")
+            self.emptyListLabel.pack(pady=10, padx=10)
+            self.emptyListButton = customtkinter.CTkButton(self.emptyListTopLevel, text="OK", command=self.emptyListTopLevel.destroy)
+            self.emptyListButton.pack(pady=10, padx=10)
+
+        elif(lastDeletedSupplier>0):
+            self.deletedListTopLevel = customtkinter.CTkToplevel()
+            self.deletedListTopLevel.title("Index")
+            self.deletedListTopLevel.geometry("300x300")
+            self.deletedListTopLevel.grab_set()
+
+            self.ctkIndexList = CTkListbox(self.deletedListTopLevel)
+            for fornecedor in self.cDeletedSuppliers:
+                self.ctkIndexList.insert("END",f"{fornecedor.Name}")
+            self.ctkIndexList.pack()
+
+            self.button = customtkinter.CTkButton(self.deletedListTopLevel, width=100, height=100, text_color="RED", text="OK", command=self.restoreListCommand)
+            self.button.pack(pady=10) #to aqui
+
+    def restoreListCommand(self):
+            self.index = self.ctkIndexList.curselection()
+            self.ctkIndexList.delete(self.index)
+            
+            self.cListBox.insert("END", self.cDeletedSuppliers[self.index].Name)
+
+            for fornecedor in self.cDeletedSuppliers:
+                if(fornecedor.Name == self.cDeletedSuppliers[self.index].Name):
+                    correctiveSuppliers_List.append(self.cDeletedSuppliers[self.index])
+                    print(f"Fornecedor restaurado: {fornecedor.Name}")
+                    self.cDeletedSuppliers.pop(self.index)
+                    print(F"Tamanho da lista dos deletados após restaurar: {len(self.cDeletedSuppliers)}")
+                    break
+            if(self.cDeletedSuppliers==[]):
+                self.deletedListTopLevel.destroy()
 
     def playNotificationSound(self):
         pygame.mixer.music.load('./Notify.wav')
@@ -229,12 +266,14 @@ def data_push():
 
     if (sendChoose == "corrective"):
         print("Enviando emails atrasados")
-
         global correctiveSuppliers_Names
         global correctiveSuppliers_List
 
         correctiveSuppliers_Names = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
             subset="Fornecedor", keep="first").values.tolist()
+
+        for supplier in correctiveSuppliers_Names:
+            print(supplier)
 
         correctiveSuppliers_List = []
         for correctiveSupplier_Name in correctiveSuppliers_Names:
@@ -242,16 +281,11 @@ def data_push():
                 "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
             format_data(lateOrders)
 
-            pCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], [
+            cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], [
                 "Email"]]
             correctiveSuppliers_List.append(
-                Supplier(correctiveSupplier_Name[0], f"{pCurrent_email}", lateOrders))
-            # Supplier(Name, Email, Totalorders)
-
-            for names in correctiveSuppliers_List:
-                print(names.Name)
-                print(names.Email)
-                print(names.TotalOrders)
+                Supplier(correctiveSupplier_Name[0], f"{cCurrent_email}", lateOrders))
+            # Supplier(Name, Email, Totalorders, Index)
 
     elif (sendChoose == "preventive"):
         global preventiveSuppliers_Names
@@ -269,7 +303,7 @@ def data_push():
 
             cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], ["Email"]]
 
-            correctiveSuppliers_List.append(
+            preventiveSuppliers_List.append(
                 Supplier(correctiveSupplier_Name[0], cCurrent_email, preventiveOrders))
             #Class Supplier(Name, Email, Orders)
 
