@@ -137,13 +137,13 @@ class interface():
 
         self.cancelButton = customtkinter.CTkButton(self.cTopLevel,text="Cancelar", command=self.cTopLevel.destroy, width=300, height=50)
         self.cancelButton.grid(row=3, column=0, pady=40, padx=40)
-        self.sendButton = customtkinter.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: sendCorrectiveEmail(correctiveSuppliers_List), width=300, height=50)
+        self.sendButton = customtkinter.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliers_List), width=300, height=50)
         self.sendButton.grid(row=3, column=2, pady=40, padx=40)
         
     def clickevent(self, click):
         global sendChoose
         sendChoose = click
-        data_push()
+        self.data_push()
         if(sendChoose=="corrective"):
             self.addCorrectiveWindow()
         elif(sendChoose=="preventive"):
@@ -244,145 +244,145 @@ class interface():
         pygame.mixer.music.load('./Notify.wav')
         pygame.mixer.music.play(loops=0)
 
-def format_data(Orders):
-    Orders.pop(Orders.columns[0])
+    def format_data(self, Orders):
+        Orders.pop(Orders.columns[0])
 
-    Orders.index += 1
+        Orders.index += 1
 
-    Orders['Data de entrega'] = pd.to_datetime(
-        Orders['Data de entrega'], format='%d/%m/%Y')
+        Orders['Data de entrega'] = pd.to_datetime(
+            Orders['Data de entrega'], format='%d/%m/%Y')
 
-    Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime(
-        "%d/%m/%Y   ")
+        Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime(
+            "%d/%m/%Y   ")
 
-def data_push():
-    suppliers_data = pd.read_excel(email_data_filepath)
-    emails_data = suppliers_data[["Nome", "Email"]]
+    def data_push(self):
+        suppliers_data = pd.read_excel(email_data_filepath)
+        emails_data = suppliers_data[["Nome", "Email"]]
 
-    total_orders = pd.read_excel(orders_data_filepath)
-    total_orders = total_orders[total_orders['Situação'] != 'Envio pendente']
-    total_orders = total_orders[total_orders['Nacionalidade'] == 'Brasil']
-    MP_filter = ['MATERIA-PRIMA', 'MATERIA PRIMA INDUSTRIALIZAÇÃO',
-                 'MATERIAL DE USO E CONSUMO']
-    total_orders = total_orders[total_orders['Rateio'].isin(MP_filter)]
+        total_orders = pd.read_excel(orders_data_filepath)
+        total_orders = total_orders[total_orders['Situação'] != 'Envio pendente']
+        total_orders = total_orders[total_orders['Nacionalidade'] == 'Brasil']
+        MP_filter = ['MATERIA-PRIMA', 'MATERIA PRIMA INDUSTRIALIZAÇÃO',
+                    'MATERIAL DE USO E CONSUMO']
+        total_orders = total_orders[total_orders['Rateio'].isin(MP_filter)]
 
-    total_orders['Data de entrega'] = pd.to_datetime(
-        total_orders['Data de entrega'], format='%d/%m/%Y')
+        total_orders['Data de entrega'] = pd.to_datetime(
+            total_orders['Data de entrega'], format='%d/%m/%Y')
 
-    # Late Orders for corrective treatment
-    total_late_orders = total_orders[total_orders['Data de entrega'] < today_date]
+        # Late Orders for corrective treatment
+        total_late_orders = total_orders[total_orders['Data de entrega'] < today_date]
 
-    # Ten days ahead Orders for preventive preventive treatment
-    date_tenDaysAhead = today_date + timedelta(days=11)
-    dateMask = (total_orders['Data de entrega'] > today_date) & (
-        total_orders['Data de entrega'] <= date_tenDaysAhead)
-    orders_tenDaysAhead = total_orders.loc[dateMask]
+        # Ten days ahead Orders for preventive preventive treatment
+        date_tenDaysAhead = today_date + timedelta(days=11)
+        dateMask = (total_orders['Data de entrega'] > today_date) & (
+            total_orders['Data de entrega'] <= date_tenDaysAhead)
+        orders_tenDaysAhead = total_orders.loc[dateMask]
 
-    if (sendChoose == "corrective"):
-        print("Enviando emails atrasados")
-        global correctiveSuppliers_Names
-        global correctiveSuppliers_List
+        if (sendChoose == "corrective"):
+            print("Enviando emails atrasados")
+            global correctiveSuppliers_Names
+            global correctiveSuppliers_List
 
-        correctiveSuppliers_Names = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
-            subset="Fornecedor", keep="first").values.tolist()
+            correctiveSuppliers_Names = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
+                subset="Fornecedor", keep="first").values.tolist()
 
-        for supplier in correctiveSuppliers_Names:
-            print(supplier)
+            for supplier in correctiveSuppliers_Names:
+                print(supplier)
 
-        correctiveSuppliers_List = []
-        for correctiveSupplier_Name in correctiveSuppliers_Names:
-            lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == correctiveSupplier_Name[0], [
-                "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
-            format_data(lateOrders)
+            correctiveSuppliers_List = []
+            for correctiveSupplier_Name in correctiveSuppliers_Names:
+                lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == correctiveSupplier_Name[0], [
+                    "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
+                self.format_data(lateOrders)
 
-            cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], [
-                "Email"]]
-            correctiveSuppliers_List.append(
-                Supplier(correctiveSupplier_Name[0], f"{cCurrent_email}", lateOrders))
-            # Supplier(Name, Email, Totalorders, Index)
+                cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], [
+                    "Email"]]
+                correctiveSuppliers_List.append(
+                    Supplier(correctiveSupplier_Name[0], f"{cCurrent_email}", lateOrders))
+                # Supplier(Name, Email, Totalorders, Index)
 
-    elif (sendChoose == "preventive"):
-        global preventiveSuppliers_Names
-        global preventiveSuppliers_List
+        elif (sendChoose == "preventive"):
+            global preventiveSuppliers_Names
+            global preventiveSuppliers_List
 
-        preventiveSuppliers_Names = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
-            subset="Fornecedor", keep="first").values.tolist()
-        
-        preventiveSuppliers_List = []
-        for preventiveSupplier_Name in preventiveSuppliers_Names:
-            preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == correctiveSupplier_Name[0], [
-                "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]]
-            preventiveOrders.index.name = "N"
-            format_data(preventiveOrders)
+            preventiveSuppliers_Names = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
+                subset="Fornecedor", keep="first").values.tolist()
+            
+            preventiveSuppliers_List = []
+            for preventiveSupplier_Name in preventiveSuppliers_Names:
+                preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == correctiveSupplier_Name[0], [
+                    "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]]
+                preventiveOrders.index.name = "N"
+                self.format_data(preventiveOrders)
 
-            cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], ["Email"]]
+                cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], ["Email"]]
 
-            preventiveSuppliers_List.append(
-                Supplier(correctiveSupplier_Name[0], cCurrent_email, preventiveOrders))
-            #Class Supplier(Name, Email, Orders)
+                preventiveSuppliers_List.append(
+                    Supplier(correctiveSupplier_Name[0], cCurrent_email, preventiveOrders))
+                #Class Supplier(Name, Email, Orders)
 
-        # Comando para gerar arquivos excel bom base nos total_late_orders e nomes de cada fornecedor
-        # PedidosAtrasados.to_excel(f'total_late_orders{fornecedor[0]}.xlsx')
+            # Comando para gerar arquivos excel bom base nos total_late_orders e nomes de cada fornecedor
+            # PedidosAtrasados.to_excel(f'total_late_orders{fornecedor[0]}.xlsx')
 
-def sendCorrectiveEmail(suppliersList):
-    outlook = win32.Dispatch("Outlook.Application")
-    ccEmail = ["glaucio.costa@fkgroup.com.br","luciana.santos@fkgroup.com.br", "guilherme.silva@fkgroup.com.br"]
-    time.sleep(1)
-    for supplier in suppliersList:
-        lateOrdersHTML = supplier.TotalOrders.to_html(
-            col_space=50, justify='center')
-        correctiveEmailBody = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            {style}
-        </head>
-        <body>
-            <h1>Olá:{supplier.Name}</h1>
-            <h2>Favor validar esses pedidos que constam em atraso em nosso sistema: </h2>
-            {lateOrdersHTML}
-        </body>
-        </html>
-        """
-        print(correctiveEmailBody)
-        email = outlook.CreateItem(0)
+    def sendCorrectiveEmail(self, suppliersList):
+        outlook = win32.Dispatch("Outlook.Application")
+        ccEmail = ["glaucio.costa@fkgroup.com.br","luciana.santos@fkgroup.com.br", "guilherme.silva@fkgroup.com.br"]
         time.sleep(1)
-        email.To = f'{supplier.Email}'
-        email.Cc = ccEmail
-        email.Subject = f"Pedidos atrasados {supplier.Name}"
-        email.HTMLBody = (correctiveEmailBody)
-        email.Send()
-        print(f"Email enviado: {supplier.Name}")
-        time.sleep(2)
+        for supplier in suppliersList:
+            lateOrdersHTML = supplier.TotalOrders.to_html(
+                col_space=50, justify='center')
+            correctiveEmailBody = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                {style}
+            </head>
+            <body>
+                <h1>Olá:{supplier.Name}</h1>
+                <h2>Favor validar esses pedidos que constam em atraso em nosso sistema: </h2>
+                {lateOrdersHTML}
+            </body>
+            </html>
+            """
+            print(correctiveEmailBody)
+            email = outlook.CreateItem(0)
+            time.sleep(1)
+            email.To = f'{supplier.Email}'
+            email.Cc = ccEmail
+            email.Subject = f"Pedidos atrasados {supplier.Name}"
+            email.HTMLBody = (correctiveEmailBody)
+            email.Send()
+            print(f"Email enviado: {supplier.Name}")
+            time.sleep(2)
 
-def sendPreventiveEmail(suppliersList):
-    outlook = win32.Dispatch("Outlook.Application")
-    time.sleep(1)
-    for supplier in suppliersList:
-        lateOrdersHTML = supplier.TotalOrders.to_html(
-            col_space=50, justify='center')
-        preventiveEmailBody = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            {style}
-        </head>
-        <body>
-            <h1>Olá:{supplier.Name}</h1>
-            <h2>Favor validar confirmar a entrega desses pedidos conforme as datas previstas: </h2>
-            {lateOrdersHTML}
-        </body>
-        </html>
-        """
-        print(preventiveEmailBody)
-        email = outlook.CreateItem(0)
+    def sendPreventiveEmail(self, suppliersList):
+        outlook = win32.Dispatch("Outlook.Application")
         time.sleep(1)
-        email.To = 'rafaelzinhobr159@gmail.com'
-        email.Subject = f"Entrega Pedidos: {supplier.Name}"
-        email.HTMLBody = (preventiveEmailBody)
-        email.Send()
-        print(f"Email enviado: {supplier.Name}")
-        time.sleep(2)
+        for supplier in suppliersList:
+            lateOrdersHTML = supplier.TotalOrders.to_html(
+                col_space=50, justify='center')
+            preventiveEmailBody = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                {style}
+            </head>
+            <body>
+                <h1>Olá:{supplier.Name}</h1>
+                <h2>Favor validar confirmar a entrega desses pedidos conforme as datas previstas: </h2>
+                {lateOrdersHTML}
+            </body>
+            </html>
+            """
+            print(preventiveEmailBody)
+            email = outlook.CreateItem(0)
+            time.sleep(1)
+            email.To = 'rafaelzinhobr159@gmail.com'
+            email.Subject = f"Entrega Pedidos: {supplier.Name}"
+            email.HTMLBody = (preventiveEmailBody)
+            email.Send()
+            print(f"Email enviado: {supplier.Name}")
+            time.sleep(2)
 
 root = customtkinter.CTk()
 root.iconbitmap(iconpath)
