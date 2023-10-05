@@ -10,7 +10,8 @@ import pygame
 
 # Getting today date
 today_date = dt.datetime.now()
-iconpath = 'fk-logo.ico'
+iconpath = "C:/Users/Rafaeros/Documents/Development/Python/FollowUp/fk-logo.ico"
+
 
 # Email style
 style = """
@@ -85,13 +86,22 @@ class interface():
         global email_data_filepath
         email_data_filepath = customtkinter.filedialog.askopenfilename()
         email_data_filepath = "".join(email_data_filepath)
-        self.selectedArchive(email_data_filepath)
+        if(email_data_filepath != ""):
+            self.selectedArchive(email_data_filepath)
+        else:
+            self.selectedArchive(email_data_filepath)
+            self.archiveTopLevel.destroy()
 
     def add_file(self):
         global orders_data_filepath
         orders_data_filepath = customtkinter.filedialog.askopenfilename()
         orders_data_filepath = "".join(orders_data_filepath)
-        self.selectedArchive(orders_data_filepath)
+        if(orders_data_filepath != ""):
+            self.selectedArchive(orders_data_filepath)
+        else:
+            self.selectedArchive(orders_data_filepath)
+            self.archiveTopLevel.destroy()
+
     
     def addPreventiveWindow(self):
         self.pTopLevel = ""
@@ -141,9 +151,9 @@ class interface():
     
     def selectedArchive(self, path):
         self.archiveTopLevel = customtkinter.CTkToplevel()
-        self.archiveTopLevel.grab_set()
         self.archiveTopLevel.title("Arquivo selecionado")
         self.archiveTopLevel.geometry("300x200")
+        self.archiveTopLevel.grab_set()
 
         self.playNotificationSound()
 
@@ -152,13 +162,17 @@ class interface():
         self.selectedArchiveLabel.pack(pady=10,padx=10)
 
         #splits the file path
-        self.splitFilePath = path.split('/')
-        splitLen = len(self.splitFilePath)-1
+        splitFilePath = path.split('/')
+        splitLen = len(splitFilePath)-1
+        text=splitFilePath[splitLen]
+        text = customtkinter.StringVar()
+        text.set(f"{splitFilePath[splitLen]}")
         
+        #underline text configuration
         underlineText = customtkinter.CTkFont(underline=True)
 
         #Archive name label show
-        self.selectedArchiveNameLabel = customtkinter.CTkLabel(self.archiveTopLevel, text=f'{self.splitFilePath[splitLen]}', font=underlineText)
+        self.selectedArchiveNameLabel = customtkinter.CTkLabel(self.archiveTopLevel, font=underlineText, textvariable=text)
         self.selectedArchiveNameLabel.pack(pady=10, padx=10)
 
         self.okButton = customtkinter.CTkButton(self.archiveTopLevel, text="OK", command=self.archiveTopLevel.destroy)
