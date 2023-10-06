@@ -10,7 +10,7 @@ import pygame
 
 # Getting today date
 today_date = dt.datetime.now()
-iconpath = "C:/Users/Rafaeros/Documents/Development/Python/FollowUp/fk-logo.ico"
+iconpath = "fk-logo.ico"
 
 
 # Email style
@@ -86,23 +86,109 @@ class interface():
         global email_data_filepath
         email_data_filepath = customtkinter.filedialog.askopenfilename()
         email_data_filepath = "".join(email_data_filepath)
-        if(email_data_filepath != ""):
-            self.selectedArchive(email_data_filepath)
-        else:
-            self.selectedArchive(email_data_filepath)
-            self.archiveTopLevel.destroy()
+        self.selectedArchive(email_data_filepath)
 
     def add_file(self):
         global orders_data_filepath
         orders_data_filepath = customtkinter.filedialog.askopenfilename()
         orders_data_filepath = "".join(orders_data_filepath)
-        if(orders_data_filepath != ""):
-            self.selectedArchive(orders_data_filepath)
-        else:
-            self.selectedArchive(orders_data_filepath)
-            self.archiveTopLevel.destroy()
+        self.selectedArchive(orders_data_filepath)
 
-    
+    def format_data(self, Orders):
+        Orders.pop(Orders.columns[0])
+
+        Orders.index += 1
+
+        Orders['Data de entrega'] = pd.to_datetime(
+            Orders['Data de entrega'], format='%d/%m/%Y')
+
+        Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime(
+            "%d/%m/%Y   ")
+
+    def data_push(self):
+        suppliersData = pd.read_excel(email_data_filepath)
+        emails_data = suppliersData[["Nome", "Email"]]
+
+        total_orders = pd.read_excel(orders_data_filepath)
+        total_orders = total_orders[total_orders['Situação'] != 'Envio pendente']
+        total_orders = total_orders[total_orders['Nacionalidade'] == 'Brasil']
+        MP_filter = ['MATERIA-PRIMA', 'MATERIA PRIMA INDUSTRIALIZAÇÃO',
+                    'MATERIAL DE USO E CONSUMO']
+        total_orders = total_orders[total_orders['Rateio'].isin(MP_filter)]
+
+        total_orders['Data de entrega'] = pd.to_datetime(
+            total_orders['Data de entrega'], format='%d/%m/%Y')
+
+        # Late Orders for corrective treatment
+        total_late_orders = total_orders[total_orders['Data de entrega'] < today_date]
+
+        # Ten days ahead Orders for preventive preventive treatment
+        date_tenDaysAhead = today_date + timedelta(days=11)
+        dateMask = (total_orders['Data de entrega'] > today_date) & (
+            total_orders['Data de entrega'] <= date_tenDaysAhead)
+        orders_tenDaysAhead = total_orders.loc[dateMask]
+
+        if (sendChoose == "corrective"):
+            print("Enviando emails atrasados")
+            global correctiveSuppliersNamesList
+            global correctiveSuppliersNames
+            global correctiveSuppliersList
+
+            correctiveSuppliersNames = []
+
+            correctiveSuppliersNamesList = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
+                subset="Fornecedor", keep="first").values.tolist()
+            
+            for Name in correctiveSuppliersNamesList:
+                correctiveSuppliersNames.append(Name[0])
+
+            for supplier in correctiveSuppliersNames:
+                print(supplier)
+
+            correctiveSuppliersList = []
+            for Name in correctiveSuppliersNames:
+                lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == Name, [
+                    "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
+                self.format_data(lateOrders)
+
+                cCurrent_email = emails_data.loc[emails_data['Nome'] == Name, [
+                    "Email"]]
+                correctiveSuppliersList.append(
+                    Supplier(Name, f"{cCurrent_email}", lateOrders))
+                # Supplier(Name, Email, Totalorders, Index)
+
+        elif (sendChoose == "preventive"):
+            global preventiveSuppliers_Names
+            global preventiveSuppliers_List
+
+            preventiveSuppliers_Names = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
+                subset="Fornecedor", keep="first").values.tolist()
+            
+            preventiveSuppliers_List = []
+            for preventiveSupplier_Name in preventiveSuppliers_Names:
+                preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == preventiveSupplier_Name[0], [
+                    "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]]
+                preventiveOrders.index.name = "N"
+                self.format_data(preventiveOrders)
+
+                pCurrent_email = emails_data.loc[emails_data['Nome'] == preventiveSupplier_Name[0], ["Email"]]
+
+                preventiveSuppliers_List.append(
+                    Supplier(preventiveSupplier_Name[0], pCurrent_email, preventiveOrders))
+                #Class Supplier(Name, Email, Orders)
+
+            # Comando para gerar arquivos excel bom base nos total_late_orders e nomes de cada fornecedor
+            # PedidosAtrasados.to_excel(f'total_late_orders{fornecedor[0]}.xlsx')
+
+    def clickevent(self, click):
+        global sendChoose
+        sendChoose = click
+        self.data_push()
+        if(sendChoose=="corrective"):
+            self.addCorrectiveWindow()
+        elif(sendChoose=="preventive"):
+            self.addPreventiveWindow()
+
     def addPreventiveWindow(self):
         self.pTopLevel = ""
         self.icon.iconbitmap("./fk-log.ico")
@@ -124,10 +210,16 @@ class interface():
         self.cTopLevel.rowconfigure(3, weight=3)
         self.cTopLevel.rowconfigure(4, weight=3)
 
-        self.cListBox = CTkListbox(self.cTopLevel, width=500, height=300)
-        for correctiveSupplier_name in correctiveSuppliers_Names:
-            self.cListBox.insert("END",correctiveSupplier_name)
-        self.cListBox.grid(row=0, column=1, pady=10)
+        self.cListBox = CTkListbox(self.cTopLevel, width=700, height=300)
+        for Name in correctiveSuppliersNames:
+            self.cListBox.insert("END",Name)
+        self.cListBox.grid(row=1, column=1, pady=10)
+
+        self.suppliersNumbers = customtkinter.StringVar()
+        self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+
+        self.totalSuppliersLabel = customtkinter.CTkLabel(self.cTopLevel, textvariable=self.suppliersNumbers)
+        self.totalSuppliersLabel.grid(row=0, column=1, pady=10, padx=10)
 
         self.restoreButton = customtkinter.CTkButton(self.cTopLevel, text="Restaurar", command=self.restoreListTopLevel)
         self.restoreButton.grid(row=1, column=0, pady=10, padx=10)
@@ -137,17 +229,8 @@ class interface():
 
         self.cancelButton = customtkinter.CTkButton(self.cTopLevel,text="Cancelar", command=self.cTopLevel.destroy, width=300, height=50)
         self.cancelButton.grid(row=3, column=0, pady=40, padx=40)
-        self.sendButton = customtkinter.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliers_List), width=300, height=50)
+        self.sendButton = customtkinter.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliersList), width=300, height=50)
         self.sendButton.grid(row=3, column=2, pady=40, padx=40)
-        
-    def clickevent(self, click):
-        global sendChoose
-        sendChoose = click
-        self.data_push()
-        if(sendChoose=="corrective"):
-            self.addCorrectiveWindow()
-        elif(sendChoose=="preventive"):
-            self.addPreventiveWindow()
     
     def selectedArchive(self, path):
         self.archiveTopLevel = customtkinter.CTkToplevel()
@@ -164,15 +247,13 @@ class interface():
         #splits the file path
         splitFilePath = path.split('/')
         splitLen = len(splitFilePath)-1
-        text=splitFilePath[splitLen]
-        text = customtkinter.StringVar()
-        text.set(f"{splitFilePath[splitLen]}")
+        fileName=splitFilePath[splitLen]
         
         #underline text configuration
         underlineText = customtkinter.CTkFont(underline=True)
 
         #Archive name label show
-        self.selectedArchiveNameLabel = customtkinter.CTkLabel(self.archiveTopLevel, font=underlineText, textvariable=text)
+        self.selectedArchiveNameLabel = customtkinter.CTkLabel(self.archiveTopLevel, font=underlineText, text=fileName)
         self.selectedArchiveNameLabel.pack(pady=10, padx=10)
 
         self.okButton = customtkinter.CTkButton(self.archiveTopLevel, text="OK", command=self.archiveTopLevel.destroy)
@@ -182,21 +263,22 @@ class interface():
         self.index = self.cListBox.curselection()
         self.cListBox.delete(self.index)
 
-        for supplier in correctiveSuppliers_List:
-            if(supplier.Name==correctiveSuppliers_List[self.index].Name):
-                self.cDeletedSuppliers.append(correctiveSuppliers_List[self.index])
+        for supplier in correctiveSuppliersList:
+            if(supplier.Name==correctiveSuppliersList[self.index].Name):
+                self.cDeletedSuppliers.append(correctiveSuppliersList[self.index])
+                self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
                 break
 
-        
         print("Fornecedor deletado")
-        print(correctiveSuppliers_List[self.index].Name)
+        print(correctiveSuppliersList[self.index].Name)
 
-        correctiveSuppliers_List.pop(self.index)
+        correctiveSuppliersList.pop(self.index)
 
         print("Lista após o delete")
-        for supplier in correctiveSuppliers_List:
+        for supplier in correctiveSuppliersList:
             print(supplier.Name)
-        print(f"Tamanho lista: {len(correctiveSuppliers_List)}")
+        print(f"Tamanho lista: {len(correctiveSuppliersList)}")
+        self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
     def restoreListTopLevel(self):
         lastDeletedSupplier = len(self.cDeletedSuppliers)
@@ -227,102 +309,30 @@ class interface():
     def restoreListCommand(self):
             self.index = self.ctkIndexList.curselection()
             self.ctkIndexList.delete(self.index)
-            
+
             self.cListBox.insert("END", self.cDeletedSuppliers[self.index].Name)
 
-            for fornecedor in self.cDeletedSuppliers:
-                if(fornecedor.Name == self.cDeletedSuppliers[self.index].Name):
-                    correctiveSuppliers_List.append(self.cDeletedSuppliers[self.index])
-                    print(f"Fornecedor restaurado: {fornecedor.Name}")
+            for supplier in self.cDeletedSuppliers:
+                if(supplier.Name == self.cDeletedSuppliers[self.index].Name):
+                    correctiveSuppliersList.append(self.cDeletedSuppliers[self.index])
+                    print(f"Fornecedor restaurado: {supplier.Name}")
+                    print(f"Indice fornecedor: {self.index}")
                     self.cDeletedSuppliers.pop(self.index)
                     print(F"Tamanho da lista dos deletados após restaurar: {len(self.cDeletedSuppliers)}")
+                    self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
                     break
             if(self.cDeletedSuppliers==[]):
+                print("Lista fornecedores após restaurar")
+                for supplier in correctiveSuppliersList:
+                    print(supplier.Name)
+                self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
                 self.deletedListTopLevel.destroy()
+
+            
 
     def playNotificationSound(self):
         pygame.mixer.music.load('./Notify.wav')
         pygame.mixer.music.play(loops=0)
-
-    def format_data(self, Orders):
-        Orders.pop(Orders.columns[0])
-
-        Orders.index += 1
-
-        Orders['Data de entrega'] = pd.to_datetime(
-            Orders['Data de entrega'], format='%d/%m/%Y')
-
-        Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime(
-            "%d/%m/%Y   ")
-
-    def data_push(self):
-        suppliers_data = pd.read_excel(email_data_filepath)
-        emails_data = suppliers_data[["Nome", "Email"]]
-
-        total_orders = pd.read_excel(orders_data_filepath)
-        total_orders = total_orders[total_orders['Situação'] != 'Envio pendente']
-        total_orders = total_orders[total_orders['Nacionalidade'] == 'Brasil']
-        MP_filter = ['MATERIA-PRIMA', 'MATERIA PRIMA INDUSTRIALIZAÇÃO',
-                    'MATERIAL DE USO E CONSUMO']
-        total_orders = total_orders[total_orders['Rateio'].isin(MP_filter)]
-
-        total_orders['Data de entrega'] = pd.to_datetime(
-            total_orders['Data de entrega'], format='%d/%m/%Y')
-
-        # Late Orders for corrective treatment
-        total_late_orders = total_orders[total_orders['Data de entrega'] < today_date]
-
-        # Ten days ahead Orders for preventive preventive treatment
-        date_tenDaysAhead = today_date + timedelta(days=11)
-        dateMask = (total_orders['Data de entrega'] > today_date) & (
-            total_orders['Data de entrega'] <= date_tenDaysAhead)
-        orders_tenDaysAhead = total_orders.loc[dateMask]
-
-        if (sendChoose == "corrective"):
-            print("Enviando emails atrasados")
-            global correctiveSuppliers_Names
-            global correctiveSuppliers_List
-
-            correctiveSuppliers_Names = total_late_orders.loc[:, ['Fornecedor']].drop_duplicates(
-                subset="Fornecedor", keep="first").values.tolist()
-
-            for supplier in correctiveSuppliers_Names:
-                print(supplier)
-
-            correctiveSuppliers_List = []
-            for correctiveSupplier_Name in correctiveSuppliers_Names:
-                lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == correctiveSupplier_Name[0], [
-                    "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
-                self.format_data(lateOrders)
-
-                cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], [
-                    "Email"]]
-                correctiveSuppliers_List.append(
-                    Supplier(correctiveSupplier_Name[0], f"{cCurrent_email}", lateOrders))
-                # Supplier(Name, Email, Totalorders, Index)
-
-        elif (sendChoose == "preventive"):
-            global preventiveSuppliers_Names
-            global preventiveSuppliers_List
-
-            preventiveSuppliers_Names = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
-                subset="Fornecedor", keep="first").values.tolist()
-            
-            preventiveSuppliers_List = []
-            for preventiveSupplier_Name in preventiveSuppliers_Names:
-                preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == correctiveSupplier_Name[0], [
-                    "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]]
-                preventiveOrders.index.name = "N"
-                self.format_data(preventiveOrders)
-
-                cCurrent_email = emails_data.loc[emails_data['Nome'] == correctiveSupplier_Name[0], ["Email"]]
-
-                preventiveSuppliers_List.append(
-                    Supplier(correctiveSupplier_Name[0], cCurrent_email, preventiveOrders))
-                #Class Supplier(Name, Email, Orders)
-
-            # Comando para gerar arquivos excel bom base nos total_late_orders e nomes de cada fornecedor
-            # PedidosAtrasados.to_excel(f'total_late_orders{fornecedor[0]}.xlsx')
 
     def sendCorrectiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
