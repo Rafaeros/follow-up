@@ -199,7 +199,7 @@ class interface():
         #Window configuration
         self.cTopLevel = customtkinter.CTkToplevel()
         self.cTopLevel.title("Enviando emails corretivos...")
-        self.cTopLevel.geometry("800x600")
+        self.cTopLevel.state('zoomed')
         self.cTopLevel.grab_set()
         self.cTopLevel.columnconfigure(0, weight=3)
         self.cTopLevel.columnconfigure(1, weight=3)
@@ -327,8 +327,6 @@ class interface():
                     print(supplier.Name)
                 self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
                 self.deletedListTopLevel.destroy()
-
-            
 
     def playNotificationSound(self):
         pygame.mixer.music.load('./Notify.wav')
