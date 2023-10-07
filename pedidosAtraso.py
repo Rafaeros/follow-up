@@ -210,7 +210,7 @@ class interface():
         self.cTopLevel.rowconfigure(3, weight=3)
         self.cTopLevel.rowconfigure(4, weight=3)
 
-        self.cListBox = CTkListbox(self.cTopLevel, width=700, height=300)
+        self.cListBox = CTkListbox(self.cTopLevel, width=700, height=500)
         for Name in correctiveSuppliersNames:
             self.cListBox.insert("END",Name)
         self.cListBox.grid(row=1, column=1, pady=10)
@@ -266,7 +266,6 @@ class interface():
         for supplier in correctiveSuppliersList:
             if(supplier.Name==correctiveSuppliersList[self.index].Name):
                 self.cDeletedSuppliers.append(correctiveSuppliersList[self.index])
-                self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
                 break
 
         print("Fornecedor deletado")
@@ -319,14 +318,15 @@ class interface():
                     print(f"Indice fornecedor: {self.index}")
                     self.cDeletedSuppliers.pop(self.index)
                     print(F"Tamanho da lista dos deletados após restaurar: {len(self.cDeletedSuppliers)}")
-                    self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
                     break
             if(self.cDeletedSuppliers==[]):
                 print("Lista fornecedores após restaurar")
                 for supplier in correctiveSuppliersList:
                     print(supplier.Name)
-                self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+                
                 self.deletedListTopLevel.destroy()
+
+            self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
     def playNotificationSound(self):
         pygame.mixer.music.load('./Notify.wav')
