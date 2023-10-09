@@ -4,7 +4,7 @@ from datetime import timedelta
 import time
 import win32com.client as win32
 import tkinter as tk
-import customtkinter
+import customtkinter as ctk
 from CTkListbox import *
 import pygame
 
@@ -55,42 +55,42 @@ class interface():
         master.geometry("500x500")
         pygame.mixer.init()
 
-        self.appearance = customtkinter.set_appearance_mode("Dark")
-        self.theme = customtkinter.set_default_color_theme("dark-blue")
+        self.appearance = ctk.set_appearance_mode("Dark")
+        self.theme = ctk.set_default_color_theme("dark-blue")
 
-        self.step_1 = customtkinter.CTkLabel(master, text="1° Passo")
+        self.step_1 = ctk.CTkLabel(master, text="1° Passo")
         self.step_1.pack(pady=30)
 
-        self.emailDialogButton = customtkinter.CTkButton(
+        self.emailDialogButton = ctk.CTkButton(
             master, text="Adicionar Arquivo C/ Emails", command=self.add_email_file)
         self.emailDialogButton.pack(pady=10)
 
-        self.step_2 = customtkinter.CTkLabel(master, text="2° Passo")
+        self.step_2 = ctk.CTkLabel(master, text="2° Passo")
         self.step_2.pack(pady=10)
 
-        self.fileDialogButton = customtkinter.CTkButton(
+        self.fileDialogButton = ctk.CTkButton(
             master, text="Adicionar Arquivo C/ Pedidos", command=self.add_file)
         self.fileDialogButton.pack(pady=10)
 
-        self.step_3 = customtkinter.CTkLabel(master, text="3° Passo")
+        self.step_3 = ctk.CTkLabel(master, text="3° Passo")
         self.step_3.pack(pady=10)
 
-        self.sendlateOrder_emails = customtkinter.CTkButton(master, text="Enviar Emails Atrasados", command=lambda m="corrective": self.clickevent(m))
+        self.sendlateOrder_emails = ctk.CTkButton(master, text="Enviar Emails Atrasados", command=lambda m="corrective": self.clickevent(m))
         self.sendlateOrder_emails.pack(pady=10)
 
-        self.sendPreventive_emails = customtkinter.CTkButton(
+        self.sendPreventive_emails = ctk.CTkButton(
             master, text="Enviar Emails Preventivos", command=lambda m="preventive": self.clickevent(m))
         self.sendPreventive_emails.pack(pady=10)
 
     def add_email_file(self):
         global email_data_filepath
-        email_data_filepath = customtkinter.filedialog.askopenfilename()
+        email_data_filepath = ctk.filedialog.askopenfilename()
         email_data_filepath = "".join(email_data_filepath)
         self.selectedArchive(email_data_filepath)
 
     def add_file(self):
         global orders_data_filepath
-        orders_data_filepath = customtkinter.filedialog.askopenfilename()
+        orders_data_filepath = ctk.filedialog.askopenfilename()
         orders_data_filepath = "".join(orders_data_filepath)
         self.selectedArchive(orders_data_filepath)
 
@@ -197,7 +197,7 @@ class interface():
     
     def addCorrectiveWindow(self):
         #Window configuration
-        self.cTopLevel = customtkinter.CTkToplevel()
+        self.cTopLevel = ctk.CTkToplevel()
         self.cTopLevel.title("Enviando emails corretivos...")
         self.cTopLevel.state('zoomed')
         self.cTopLevel.grab_set()
@@ -215,25 +215,25 @@ class interface():
             self.cListBox.insert("END",Name)
         self.cListBox.grid(row=1, column=1, pady=10)
 
-        self.suppliersNumbers = customtkinter.StringVar()
+        self.suppliersNumbers = ctk.StringVar()
         self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
-        self.totalSuppliersLabel = customtkinter.CTkLabel(self.cTopLevel, textvariable=self.suppliersNumbers)
+        self.totalSuppliersLabel = ctk.CTkLabel(self.cTopLevel, textvariable=self.suppliersNumbers)
         self.totalSuppliersLabel.grid(row=0, column=1, pady=10, padx=10)
 
-        self.restoreButton = customtkinter.CTkButton(self.cTopLevel, text="Restaurar", command=self.restoreListTopLevel)
+        self.restoreButton = ctk.CTkButton(self.cTopLevel, text="Restaurar", command=self.restoreListTopLevel)
         self.restoreButton.grid(row=1, column=0, pady=10, padx=10)
         
-        self.deleteButton = customtkinter.CTkButton(self.cTopLevel, text="Deletar", command=self.deleteSelectedItem, fg_color="#FF0000", text_color="white", hover_color="#990000")
+        self.deleteButton = ctk.CTkButton(self.cTopLevel, text="Deletar", command=self.deleteSelectedItem, fg_color="#FF0000", text_color="white", hover_color="#990000")
         self.deleteButton.grid(row=1, column=2, pady=10, padx=10)
 
-        self.cancelButton = customtkinter.CTkButton(self.cTopLevel,text="Cancelar", command=self.cTopLevel.destroy, width=300, height=50)
+        self.cancelButton = ctk.CTkButton(self.cTopLevel,text="Cancelar", command=self.cTopLevel.destroy, width=300, height=50)
         self.cancelButton.grid(row=3, column=0, pady=40, padx=40)
-        self.sendButton = customtkinter.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliersList), width=300, height=50)
+        self.sendButton = ctk.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliersList), width=300, height=50)
         self.sendButton.grid(row=3, column=2, pady=40, padx=40)
     
     def selectedArchive(self, path):
-        self.archiveTopLevel = customtkinter.CTkToplevel()
+        self.archiveTopLevel = ctk.CTkToplevel()
         self.archiveTopLevel.title("Arquivo selecionado")
         self.archiveTopLevel.geometry("300x200")
         self.archiveTopLevel.grab_set()
@@ -241,7 +241,7 @@ class interface():
         self.playNotificationSound()
 
         #Shows "Selected Arqhive" in the window
-        self.selectedArchiveLabel = customtkinter.CTkLabel(self.archiveTopLevel, text="Arquivo selecionado:", pady=10,padx=10)
+        self.selectedArchiveLabel = ctk.CTkLabel(self.archiveTopLevel, text="Arquivo selecionado:", pady=10,padx=10)
         self.selectedArchiveLabel.pack(pady=10,padx=10)
 
         #splits the file path
@@ -250,13 +250,13 @@ class interface():
         fileName=splitFilePath[splitLen]
         
         #underline text configuration
-        underlineText = customtkinter.CTkFont(underline=True)
+        underlineText = ctk.CTkFont(underline=True)
 
         #Archive name label show
-        self.selectedArchiveNameLabel = customtkinter.CTkLabel(self.archiveTopLevel, font=underlineText, text=fileName)
+        self.selectedArchiveNameLabel = ctk.CTkLabel(self.archiveTopLevel, font=underlineText, text=fileName)
         self.selectedArchiveNameLabel.pack(pady=10, padx=10)
 
-        self.okButton = customtkinter.CTkButton(self.archiveTopLevel, text="OK", command=self.archiveTopLevel.destroy)
+        self.okButton = ctk.CTkButton(self.archiveTopLevel, text="OK", command=self.archiveTopLevel.destroy)
         self.okButton.pack(pady=20, padx=20)
 
     def deleteSelectedItem(self):
@@ -282,17 +282,17 @@ class interface():
     def restoreListTopLevel(self):
         lastDeletedSupplier = len(self.cDeletedSuppliers)
         if(lastDeletedSupplier==0):
-            self.emptyListTopLevel = customtkinter.CTkToplevel()
+            self.emptyListTopLevel = ctk.CTkToplevel()
             self.emptyListTopLevel.title("Erro")
             self.emptyListTopLevel.geometry("300x200")
             self.emptyListTopLevel.grab_set()
-            self.emptyListLabel = customtkinter.CTkLabel(self.emptyListTopLevel, text="Nenhum fornecedor foi deletado anteriormente")
+            self.emptyListLabel = ctk.CTkLabel(self.emptyListTopLevel, text="Nenhum fornecedor foi deletado anteriormente")
             self.emptyListLabel.pack(pady=10, padx=10)
-            self.emptyListButton = customtkinter.CTkButton(self.emptyListTopLevel, text="OK", command=self.emptyListTopLevel.destroy)
+            self.emptyListButton = ctk.CTkButton(self.emptyListTopLevel, text="OK", command=self.emptyListTopLevel.destroy)
             self.emptyListButton.pack(pady=10, padx=10)
 
         elif(lastDeletedSupplier>0):
-            self.deletedListTopLevel = customtkinter.CTkToplevel()
+            self.deletedListTopLevel = ctk.CTkToplevel()
             self.deletedListTopLevel.title("Index")
             self.deletedListTopLevel.geometry("300x300")
             self.deletedListTopLevel.grab_set()
@@ -302,7 +302,7 @@ class interface():
                 self.ctkIndexList.insert("END",f"{fornecedor.Name}")
             self.ctkIndexList.pack()
 
-            self.button = customtkinter.CTkButton(self.deletedListTopLevel, width=100, height=100, text_color="RED", text="OK", command=self.restoreListCommand)
+            self.button = ctk.CTkButton(self.deletedListTopLevel, width=100, height=100, text_color="RED", text="OK", command=self.restoreListCommand)
             self.button.pack(pady=10) #to aqui
 
     def restoreListCommand(self):
@@ -392,7 +392,7 @@ class interface():
             print(f"Email enviado: {supplier.Name}")
             time.sleep(2)
 
-root = customtkinter.CTk()
+root = ctk.CTk()
 root.iconbitmap(iconpath)
 userinterface = interface(root)
 root.mainloop()
