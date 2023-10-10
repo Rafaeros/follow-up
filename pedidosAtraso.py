@@ -209,8 +209,9 @@ class interface():
         self.cTopLevel.rowconfigure(2, weight=3)
         self.cTopLevel.rowconfigure(3, weight=3)
         self.cTopLevel.rowconfigure(4, weight=3)
+        self.cTopLevel.rowconfigure(5, weight=3)
 
-        self.cListBox = CTkListbox(self.cTopLevel, width=700, height=500)
+        self.cListBox = CTkListbox(self.cTopLevel, width=700, height=250)
         for Name in correctiveSuppliersNames:
             self.cListBox.insert("END",Name)
         self.cListBox.grid(row=1, column=1, pady=10)
@@ -222,15 +223,30 @@ class interface():
         self.totalSuppliersLabel.grid(row=0, column=1, pady=10, padx=10)
 
         self.restoreButton = ctk.CTkButton(self.cTopLevel, text="Restaurar", command=self.restoreListTopLevel)
-        self.restoreButton.grid(row=1, column=0, pady=10, padx=10)
+        self.restoreButton.grid(row=2, column=0, sticky="W" ,padx=10)
         
         self.deleteButton = ctk.CTkButton(self.cTopLevel, text="Deletar", command=self.deleteSelectedItem, fg_color="#FF0000", text_color="white", hover_color="#990000")
-        self.deleteButton.grid(row=1, column=2, pady=10, padx=10)
+        self.deleteButton.grid(row=2, column=2, pady=10, padx=10, sticky="E")
 
         self.cancelButton = ctk.CTkButton(self.cTopLevel,text="Cancelar", command=self.cTopLevel.destroy, width=300, height=50)
-        self.cancelButton.grid(row=3, column=0, pady=40, padx=40)
-        self.sendButton = ctk.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliersList), width=300, height=50)
-        self.sendButton.grid(row=3, column=2, pady=40, padx=40)
+        self.cancelButton.grid(row=3, column=0, sticky="SW", padx=10)
+
+        self.emailCcEntry = ctk.CTkEntry(self.cTopLevel, placeholder_text="Email:", width=200)
+        self.emailCcEntry.grid(row=2, column=1)
+        #testing bingind key presses
+        #self.emailCcEntry.bind("<Return>", self.addCcEmail)
+
+        self.emailCcListBox = CTkListbox(self.cTopLevel, width=300, height=200)
+        self.emailCcListBox.grid(row=3, column=1)
+
+        self.emailCcAddButton = ctk.CTkButton(self.cTopLevel, text="Add Email +", command=self.addCcEmail)
+        self.emailCcAddButton.grid(row=4, column=1)
+
+        self.emailCcDeleteButton = ctk.CTkButton(self.cTopLevel, text="Deletar Email", command=self.deleteCcEmail, bg_color="RED")
+        self.emailCcDeleteButton.grid(row=5, column=1, pady=10, padx=10)
+
+        self.sendEmailsButton = ctk.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliersList), width=300, height=50)
+        self.sendEmailsButton.grid(row=3, column=2, sticky="SE", padx=10)
     
     def selectedArchive(self, path):
         self.archiveTopLevel = ctk.CTkToplevel()
@@ -302,7 +318,7 @@ class interface():
                 self.ctkIndexList.insert("END",f"{fornecedor.Name}")
             self.ctkIndexList.pack()
 
-            self.button = ctk.CTkButton(self.deletedListTopLevel, width=100, height=100, text_color="RED", text="OK", command=self.restoreListCommand)
+            self.button = ctk.CTkButton(self.deletedListTopLevel, width=100, height=100, text="OK", command=self.restoreListCommand)
             self.button.pack(pady=10) #to aqui
 
     def restoreListCommand(self):
@@ -328,13 +344,38 @@ class interface():
 
             self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
+    def addCcEmail(self):
+        email = self.emailCcEntry.get()
+        self.emailCcList = []
+        if(email!=""):
+            self.emailCcList.append(email)
+            self.emailCcListBox.insert("END", email)
+            self.emailCcEntry.delete(0, 'end')
+            print("Total de emails")
+        else:
+            print("Nada foi preenchido")
+
+        for email in self.emailCcList:
+            print(email)
+
+    def deleteCcEmail(self):
+        self.index = self.emailCcListBox.curselection()
+        self.emailCcListBox.delete(self.index)
+
+        print("Deletando email:")
+        for email in self.emailCcList:
+            if(email==self.emailCcList[self.index]):
+                print(f"Email deletado: {self.emailCcList[self.index]}")
+                self.emailCcList.pop(self.index)
+                break
+
     def playNotificationSound(self):
         pygame.mixer.music.load('./Notify.wav')
         pygame.mixer.music.play(loops=0)
 
     def sendCorrectiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
-        ccEmail = ["glaucio.costa@fkgroup.com.br","luciana.santos@fkgroup.com.br", "guilherme.silva@fkgroup.com.br"]
+        #ccEmail = ["glaucio.costa@fkgroup.com.br","luciana.santos@fkgroup.com.br", "guilherme.silva@fkgroup.com.br"]
         time.sleep(1)
         for supplier in suppliersList:
             lateOrdersHTML = supplier.TotalOrders.to_html(
@@ -356,7 +397,7 @@ class interface():
             email = outlook.CreateItem(0)
             time.sleep(1)
             email.To = f'{supplier.Email}'
-            email.Cc = ccEmail
+            email.Cc = self.emailCcList
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
             email.Send()
