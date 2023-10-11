@@ -375,8 +375,9 @@ class interface():
 
     def sendCorrectiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
+        
         #ccEmail = ["glaucio.costa@fkgroup.com.br","luciana.santos@fkgroup.com.br", "guilherme.silva@fkgroup.com.br"]
-        time.sleep(1)
+        time.sleep(3)
         for supplier in suppliersList:
             lateOrdersHTML = supplier.TotalOrders.to_html(
                 col_space=50, justify='center')
@@ -397,12 +398,13 @@ class interface():
             email = outlook.CreateItem(0)
             time.sleep(1)
             email.To = f'{supplier.Email}'
-            email.Cc = self.emailCcList
+            email.Cc = ";".join(self.emailCcList)
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
+            time.sleep(0.5)
             email.Send()
+            time.sleep(5)
             print(f"Email enviado: {supplier.Name}")
-            time.sleep(2)
 
     def sendPreventiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
