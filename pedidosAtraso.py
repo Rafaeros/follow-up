@@ -48,6 +48,7 @@ class interface():
 
         #Declarating variables
         self.cDeletedSuppliers = []
+        self.emailCcList = []
         self.index = -5
 
         self.master = master
@@ -239,6 +240,12 @@ class interface():
         self.emailCcListBox = CTkListbox(self.cTopLevel, width=300, height=200)
         self.emailCcListBox.grid(row=3, column=1)
 
+        if(self.emailCcList==[]):
+            pass
+        else:
+            for email in self.emailCcList:
+                self.emailCcListBox.insert('end', email)
+
         self.emailCcAddButton = ctk.CTkButton(self.cTopLevel, text="Add Email +", command=self.addCcEmail)
         self.emailCcAddButton.grid(row=4, column=1)
 
@@ -346,17 +353,12 @@ class interface():
 
     def addCcEmail(self):
         email = self.emailCcEntry.get()
-        self.emailCcList = []
         if(email!=""):
             self.emailCcList.append(email)
             self.emailCcListBox.insert("END", email)
             self.emailCcEntry.delete(0, 'end')
-            print("Total de emails")
         else:
             print("Nada foi preenchido")
-
-        for email in self.emailCcList:
-            print(email)
 
     def deleteCcEmail(self):
         self.index = self.emailCcListBox.curselection()
@@ -389,22 +391,31 @@ class interface():
             </head>
             <body>
                 <h1>Olá:{supplier.Name}</h1>
-                <h2>Favor validar esses pedidos que constam em atraso em nosso sistema: </h2>
+                <h2>Favor confirmar a nova data de entrega desses pedidos que constam em atraso em nosso sistema: </h2>
                 {lateOrdersHTML}
+
+
+                <h3>Caso o pedido já tenha sido faturado ou despachado favor nos informar</h3>
             </body>
             </html>
             """
-            print(correctiveEmailBody)
             email = outlook.CreateItem(0)
             time.sleep(1)
-            email.To = f'{supplier.Email}'
-            email.Cc = ";".join(self.emailCcList)
+            #email.To = f'{supplier.Email}'
+            email.To = "rafaelzinhobr159@gmail.com"
+
+            if(self.emailCcList==[]):
+                pass
+            else:
+                self.joinedEmail = "; ".join(self.emailCcList)
+                email.Cc = self.joinedEmail
+
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
-            time.sleep(0.5)
+            time.sleep(1)
             email.Send()
-            time.sleep(5)
-            print(f"Email enviado: {supplier.Name}")
+            time.sleep(2)
+            print(f"Email enviado para: {supplier.Name}")
 
     def sendPreventiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
