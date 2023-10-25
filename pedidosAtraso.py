@@ -12,7 +12,6 @@ import pygame
 today_date = dt.datetime.now()
 iconpath = "fk-logo.ico"
 
-
 # Email style
 style = """
 <style>
@@ -121,7 +120,8 @@ class interface():
             total_orders['Data de entrega'], format='%d/%m/%Y')
 
         # Late Orders for corrective treatment
-        total_late_orders = total_orders[total_orders['Data de entrega'] < today_date]
+        lastDay = today_date - timedelta(days=1)
+        total_late_orders = total_orders[total_orders['Data de entrega'] < lastDay]
 
         # Ten days ahead Orders for preventive preventive treatment
         date_tenDaysAhead = today_date + timedelta(days=11)
@@ -394,7 +394,6 @@ class interface():
                 <h2>Favor confirmar a nova data de entrega desses pedidos que constam em atraso em nosso sistema: </h2>
                 {lateOrdersHTML}
 
-
                 <h3>Caso o pedido já tenha sido faturado ou despachado favor nos informar</h3>
             </body>
             </html>
@@ -413,7 +412,7 @@ class interface():
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
             time.sleep(1)
-            email.Send()
+            email.send()
             time.sleep(2)
             print(f"Email enviado para: {supplier.Name}")
 
