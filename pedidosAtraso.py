@@ -1,4 +1,5 @@
 import pandas as pd
+from Supplier import Supplier
 import datetime as dt
 from datetime import timedelta
 import time
@@ -35,12 +36,6 @@ td:nth-child(5) {
 }
 </style>
 """
-
-class Supplier():
-    def __init__(self, Name, Email, TotalOrders):
-        self.Name = Name
-        self.Email = Email
-        self.TotalOrders = TotalOrders
 
 class interface():
     def __init__(self, master):
@@ -153,9 +148,17 @@ class interface():
                 self.format_data(lateOrders)
 
                 cCurrent_email = emails_data.loc[emails_data['Nome'] == Name, [
-                    "Email"]]
+                    "Email"]].to_string(index=False, header=False)
+                            
+                print(cCurrent_email)
+                print(type(cCurrent_email))
+
+                splitcCurrent_email = cCurrent_email.split(sep=",")
+
+                joincCurrent_email = "; ".join(splitcCurrent_email)
+
                 correctiveSuppliersList.append(
-                    Supplier(Name, f"{cCurrent_email}", lateOrders))
+                    Supplier(Name, f"{joincCurrent_email}", lateOrders))
                 # Supplier(Name, Email, Totalorders, Index)
 
         elif (sendChoose == "preventive"):
@@ -400,8 +403,7 @@ class interface():
             """
             email = outlook.CreateItem(0)
             time.sleep(1)
-            #email.To = f'{supplier.Email}'
-            email.To = "rafaelzinhobr159@gmail.com"
+            email.To = f'{supplier.Email}'
 
             if(self.emailCcList==[]):
                 pass
@@ -412,7 +414,7 @@ class interface():
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
             time.sleep(1)
-            email.send()
+            email.Display()
             time.sleep(2)
             print(f"Email enviado para: {supplier.Name}")
 
