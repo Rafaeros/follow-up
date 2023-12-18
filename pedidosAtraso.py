@@ -18,6 +18,7 @@ style = """
 <style>
 * {
 padding: 5px;
+text-color: black;
 }
 
 thead {
@@ -126,7 +127,6 @@ class interface():
         orders_tenDaysAhead = total_orders.loc[dateMask]
 
         if (sendChoose == "corrective"):
-            print("Enviando emails atrasados")
             global correctiveSuppliersNamesList
             global correctiveSuppliersNames
             global correctiveSuppliersList
@@ -139,9 +139,6 @@ class interface():
             for Name in correctiveSuppliersNamesList:
                 correctiveSuppliersNames.append(Name[0])
 
-            for supplier in correctiveSuppliersNames:
-                print(supplier)
-
             correctiveSuppliersList = []
             for Name in correctiveSuppliersNames:
                 lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == Name, [
@@ -151,9 +148,6 @@ class interface():
                 cCurrent_email = emails_data.loc[emails_data['Nome'] == Name, [
                     "Email"]].to_string(index=False, header=False)
                             
-                print(cCurrent_email)
-                print(type(cCurrent_email))
-
                 splitcCurrent_email = cCurrent_email.split(sep=",")
 
                 joincCurrent_email = "; ".join(splitcCurrent_email)
@@ -189,11 +183,6 @@ class interface():
                 preventiveSuppliersList.append(
                     Supplier(Name, pCurrent_email, preventiveOrders))
                 #Class Supplier(Name, Email, Orders)
-
-                for sup in preventiveSuppliersList:
-                    print(sup.Name)
-                    print(sup.Email)
-                    print(sup.TotalOrders)
 
             # Comando para gerar arquivos excel com base nos total_late_orders e nomes de cada fornecedor
             # PedidosAtrasados.to_excel(f'total_late_orders{fornecedor[0]}.xlsx')
@@ -318,7 +307,7 @@ class interface():
         self.emailCcAddButton = ctk.CTkButton(self.cTopLevel, text="Add Email +", command=self.addCcEmail)
         self.emailCcAddButton.grid(row=4, column=1)
 
-        self.emailCcDeleteButton = ctk.CTkButton(self.cTopLevel, text="Deletar Email", command=self.deleteCcEmail, bg_color="RED")
+        self.emailCcDeleteButton = ctk.CTkButton(self.cTopLevel, text="Deletar Email", command=self.deleteCcEmail)
         self.emailCcDeleteButton.grid(row=5, column=1, pady=10, padx=10)
 
         self.sendCEmailsButton = ctk.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliersList), width=300, height=50)
@@ -360,15 +349,8 @@ class interface():
                 self.pDeletedSuppliers.append(preventiveSuppliersList[self.index])
                 break
 
-        print("Fornecedor deletado")
-        print(preventiveSuppliersList[self.index].Name)
-
         preventiveSuppliersList.pop(self.index)
 
-        print("Lista após o delete")
-        for supplier in preventiveSuppliersList:
-            print(supplier.Name)
-        print(f"Tamanho lista: {len(preventiveSuppliersList)}")
         self.pSuppliersNumbers.set(f"Total de Fornecedores: {self.pListBox.size()}")
 
     def deleteCorrectiveSelectedItem(self):
@@ -380,15 +362,8 @@ class interface():
                 self.cDeletedSuppliers.append(correctiveSuppliersList[self.index])
                 break
 
-        print("Fornecedor deletado")
-        print(correctiveSuppliersList[self.index].Name)
-
         correctiveSuppliersList.pop(self.index)
 
-        print("Lista após o delete")
-        for supplier in correctiveSuppliersList:
-            print(supplier.Name)
-        print(f"Tamanho lista: {len(correctiveSuppliersList)}")
         self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
     def restoreCorrectiveListTopLevel(self):
@@ -426,16 +401,9 @@ class interface():
             for supplier in self.cDeletedSuppliers:
                 if(supplier.Name == self.cDeletedSuppliers[self.index].Name):
                     correctiveSuppliersList.append(self.cDeletedSuppliers[self.index])
-                    print(f"Fornecedor restaurado: {supplier.Name}")
-                    print(f"Indice fornecedor: {self.index}")
                     self.cDeletedSuppliers.pop(self.index)
-                    print(F"Tamanho da lista dos deletados após restaurar: {len(self.cDeletedSuppliers)}")
                     break
             if(self.cDeletedSuppliers==[]):
-                print("Lista fornecedores após restaurar")
-                for supplier in correctiveSuppliersList:
-                    print(supplier.Name)
-                
                 self.deletedListTopLevel.destroy()
 
             self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
@@ -475,16 +443,9 @@ class interface():
             for supplier in self.pDeletedSuppliers:
                 if(supplier.Name == self.pDeletedSuppliers[self.index].Name):
                     preventiveSuppliersList.append(self.pDeletedSuppliers[self.index])
-                    print(f"Fornecedor restaurado: {supplier.Name}")
-                    print(f"Indice fornecedor: {self.index}")
                     self.pDeletedSuppliers.pop(self.index)
-                    print(F"Tamanho da lista dos deletados após restaurar: {len(self.pDeletedSuppliers)}")
                     break
             if(self.pDeletedSuppliers==[]):
-                print("Lista fornecedores após restaurar")
-                for supplier in preventiveSuppliersList:
-                    print(supplier.Name)
-                
                 self.deletedPListTopLevel.destroy()
 
             self.pSuppliersNumbers.set(f"Total de Fornecedores: {self.pListBox.size()}")
@@ -502,10 +463,8 @@ class interface():
         self.index = self.emailCcListBox.curselection()
         self.emailCcListBox.delete(self.index)
 
-        print("Deletando email:")
         for email in self.emailCcList:
             if(email==self.emailCcList[self.index]):
-                print(f"Email deletado: {self.emailCcList[self.index]}")
                 self.emailCcList.pop(self.index)
                 break
 
@@ -517,7 +476,7 @@ class interface():
         outlook = win32.Dispatch("Outlook.Application")
         
         time.sleep(3)
-        for supplier in suppliersList:
+        for supplier in suppliersList[:]:
             lateOrdersHTML = supplier.TotalOrders.to_html(
                 col_space=50, justify='center')
             
@@ -531,7 +490,6 @@ class interface():
                 <h1>Olá:{supplier.Name}</h1>
                 <h2>Favor confirmar a nova data de entrega desses pedidos que constam em atraso em nosso sistema: </h2>
                 {lateOrdersHTML}
-
                 <h3>Caso o pedido já tenha sido faturado ou despachado favor nos informar</h3>
             </body>
             </html>
@@ -551,7 +509,24 @@ class interface():
             time.sleep(1)
             email.Display()
             time.sleep(2)
-            print(f"Email enviado para: {supplier.Name}")
+
+            suppliersList.pop(0)
+            self.cListBox.delete(0)
+            self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+
+        if(suppliersList==[]):
+            self.EmailsSendPopUp()
+
+    
+    def EmailsSendPopUp(self):
+        self.EmailSend = ctk.CTkToplevel()
+        self.EmailSend.title("Concluido")
+        self.EmailSend.geometry("300x300")
+        self.EmailSend.grab_set()
+        self.Message = ctk.CTkLabel(self.EmailSend, text="Todos oes emails foram enviados com sucesso!")
+        self.Message.pack(pady=10)
+        self.closePopUp = ctk.CTkButton(self.EmailSend, text="Ok", command=self.EmailSend.destroy)
+        self.closePopUp.pack(pady=10)
 
     def sendPreventiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
@@ -573,7 +548,6 @@ class interface():
             </body>
             </html>
             """
-            print(preventiveEmailBody)
             email = outlook.CreateItem(0)
             time.sleep(1)
             email.To = f'{supplier.Email}'
@@ -587,8 +561,14 @@ class interface():
             email.Subject = f"Entrega Pedidos: {supplier.Name}"
             email.HTMLBody = (preventiveEmailBody)
             email.Display()
-            print(f"Email enviado: {supplier.Name}")
             time.sleep(2)
+
+            suppliersList.pop(0)
+            self.pListBox.delete(0)
+            self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+
+        if(suppliersList==[]):
+            self.EmailsSendPopUp()
 
 root = ctk.CTk()
 root.iconbitmap(iconpath)
