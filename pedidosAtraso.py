@@ -83,13 +83,19 @@ class interface():
         global email_data_filepath
         email_data_filepath = ctk.filedialog.askopenfilename()
         email_data_filepath = "".join(email_data_filepath)
-        self.selectedArchive(email_data_filepath)
+        if(email_data_filepath!=""):
+            self.selectedArchive(email_data_filepath)
+        else:
+            self.emptyFilePathPopUp()
 
     def add_file(self):
         global orders_data_filepath
         orders_data_filepath = ctk.filedialog.askopenfilename()
         orders_data_filepath = "".join(orders_data_filepath)
-        self.selectedArchive(orders_data_filepath)
+        if(orders_data_filepath!=""):
+            self.selectedArchive(orders_data_filepath)
+        else:
+            self.emptyFilePathPopUp()
 
     def format_data(self, Orders):
         Orders.pop(Orders.columns[0])
@@ -515,18 +521,30 @@ class interface():
             self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
         if(suppliersList==[]):
+            self.playNotificationSound()
             self.EmailsSendPopUp()
-
     
     def EmailsSendPopUp(self):
         self.EmailSend = ctk.CTkToplevel()
         self.EmailSend.title("Concluido")
-        self.EmailSend.geometry("300x300")
+        self.EmailSend.geometry("300x150")
         self.EmailSend.grab_set()
         self.Message = ctk.CTkLabel(self.EmailSend, text="Todos oes emails foram enviados com sucesso!")
         self.Message.pack(pady=10)
         self.closePopUp = ctk.CTkButton(self.EmailSend, text="Ok", command=self.EmailSend.destroy)
         self.closePopUp.pack(pady=10)
+
+    def emptyFilePathPopUp(self):
+        self.emptyFilePathTopLevel = ctk.CTkToplevel()
+        self.emptyFilePathTopLevel.title("Atenção")
+        self.emptyFilePathTopLevel.geometry("300x150")
+        self.emptyFilePathTopLevel.grab_set()
+
+        self.emptyFilePathWarn = ctk.CTkLabel(self.emptyFilePathTopLevel, text="Nenhum arquivo foi selecionado!")
+        self.emptyFilePathWarn.pack(pady=10)
+
+        self.emptyFilePathButton = ctk.CTkButton(self.emptyFilePathTopLevel, text="OK", command=self.emptyFilePathTopLevel.destroy)
+        self.emptyFilePathButton.pack(pady=10)
 
     def sendPreventiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
@@ -542,8 +560,7 @@ class interface():
             </head>
             <body>
                 <h1>Olá:{supplier.Name}</h1>
-                <h2>Favor validar e confirmar a entrega desses pedidos conforme as datas previstas para estar
-                aqui na F&K Group: </h2>
+                <h2>Favor validar e confirmar a entrega desses pedidos conforme as datas previstas para estar aqui na F&K Group: </h2>
                 {pLateOrdersHTML}
             </body>
             </html>
