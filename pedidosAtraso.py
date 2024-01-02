@@ -45,6 +45,9 @@ class interface():
         self.cDeletedSuppliers = []
         self.pDeletedSuppliers = [] 
         self.emailCcList = []
+        self.dataError = ["Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam", "Nacionalidade", "Rateio", "Situação"]
+        self.emailDataError = ["Nome", "Email"]
+        self.leftCollumnsError = []
         self.index = -5
 
         self.master = master
@@ -108,29 +111,66 @@ class interface():
         Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime(
             "%d/%m/%Y   ")
 
+    def dataValidation(self, emailData, ordersData):
+        for error in self.emailDataError:
+            if error in emailData.columns:
+                print(f"Coluna {error} está presente na planilha")
+            else:
+                print(f"Coluna {error} não está presente na planilha")
+                self.leftCollumnsError.append(error)
+        for error in self.dataError:
+            if error in ordersData.columns:
+                print(f"Coluna {error} está presente na planilha")
+            else:
+                print(f"Coluna {error} não está presente na planilha")
+                self.leftCollumnsError.append(error)
+
+        if(self.leftCollumnsError==[]):
+            pass
+        else:
+            self.dataWarnTopLevel(self.leftCollumnsError)
+
+    def dataWarnTopLevel(self, errorsList):
+        self.errorWarnToplevel = ctk.CTkToplevel()
+        self.errorWarnToplevel.title("Erro: planilha sem as colunas necessárias")
+        self.errorWarnToplevel.geometry("400x200")
+        self.errorWarnToplevel.grab_set()
+        errorsWarnText = ", ".join(errorsList)
+        self.errorsWarnLabel = ctk.CTkLabel(self.errorWarnToplevel, text="Colunas não encontradas: ", wraplength=400)
+        self.errorsWarnLabel.pack(pady=10)
+        self.errorsListLabel = ctk.CTkLabel(self.errorWarnToplevel, text=f"{errorsWarnText}", wraplength=300)
+        self.errorsListLabel.pack(pady=10)
+        self.closeErrorTopLevelButton = ctk.CTkButton(self.errorWarnToplevel, text="OK", command=self.errorWarnToplevel.destroy)
+        self.closeErrorTopLevelButton.pack(pady=10)
+        self.errorWarnToplevel.wait_window()
+        self.leftCollumnsError.clear()
+
     def data_push(self):
         suppliersData = pd.read_excel(email_data_filepath)
+        totalOrders = pd.read_excel(orders_data_filepath)
+
+        self.dataValidation(suppliersData, totalOrders)
+
         emails_data = suppliersData[["Nome", "Email"]]
 
-        total_orders = pd.read_excel(orders_data_filepath)
-        total_orders = total_orders[total_orders['Situação'] != 'Envio pendente']
-        total_orders = total_orders[total_orders['Nacionalidade'] == 'Brasil']
+        totalOrders = totalOrders[totalOrders['Situação'] != 'Envio pendente']
+        totalOrders = totalOrders[totalOrders['Nacionalidade'] == 'Brasil']
         MP_filter = ['MATERIA-PRIMA', 'MATERIA PRIMA INDUSTRIALIZAÇÃO',
                     'MATERIAL DE USO E CONSUMO']
-        total_orders = total_orders[total_orders['Rateio'].isin(MP_filter)]
+        totalOrders = totalOrders[totalOrders['Rateio'].isin(MP_filter)]
 
-        total_orders['Data de entrega'] = pd.to_datetime(
-            total_orders['Data de entrega'], format='%d/%m/%Y')
+        totalOrders['Data de entrega'] = pd.to_datetime(
+            totalOrders['Data de entrega'], format='%d/%m/%Y')
 
         # Late Orders for corrective treatment
         lastDay = today_date - timedelta(days=1)
-        total_late_orders = total_orders[total_orders['Data de entrega'] < lastDay]
+        total_late_orders = totalOrders[totalOrders['Data de entrega'] < lastDay]
 
         # Ten days ahead Orders for preventive preventive treatment
         date_tenDaysAhead = today_date + timedelta(days=11)
-        dateMask = (total_orders['Data de entrega'] > today_date) & (
-            total_orders['Data de entrega'] <= date_tenDaysAhead)
-        orders_tenDaysAhead = total_orders.loc[dateMask]
+        dateMask = (totalOrders['Data de entrega'] > today_date) & (
+            totalOrders['Data de entrega'] <= date_tenDaysAhead)
+        orders_tenDaysAhead = totalOrders.loc[dateMask]
 
         if (sendChoose == "corrective"):
             global correctiveSuppliersNamesList
@@ -262,6 +302,7 @@ class interface():
 
     def addCorrectiveWindow(self):
         #Window configuration
+
         self.cTopLevel = ctk.CTkToplevel()
         self.cTopLevel.title("Enviando emails corretivos...")
         self.cTopLevel.state('zoomed')
