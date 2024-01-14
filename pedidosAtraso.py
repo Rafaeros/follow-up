@@ -6,8 +6,9 @@ import time
 import win32com.client as win32
 import customtkinter as ctk
 from CTkListbox import *
+from CTkMessagebox import CTkMessagebox
 from playsound import playsound
-from PIL import Image, ImageTk
+from PIL import Image
 
 # Getting today date
 today_date = dt.datetime.now()
@@ -39,7 +40,7 @@ td:nth-child(5) {
 
 class interface():
     def __init__(self, master):
-        
+        self.master = master
         #Declarating variables
         self.cDeletedSuppliers = []
         self.pDeletedSuppliers = [] 
@@ -52,39 +53,38 @@ class interface():
         self.isCorrectiveEmailSended = False
         self.index = -5
 
-        self.master = master
-        #master.protocol('WM_DELETE_WINDOW', self.EmailSendReport)
-        master.title("Follow Up F&K Group")
-        master.geometry("500x500")
+        self.master.title("Follow Up F&K Group")
+        self.master.protocol("WM_DELETE_WINDOW", self.onClosing)
+        self.master.geometry("500x500")
 
-        self.step_1 = ctk.CTkLabel(master, text="1° Passo")
+        self.step_1 = ctk.CTkLabel(self.master, text="1° Passo")
         self.step_1.pack(pady=30)
 
         self.emailDialogButton = ctk.CTkButton(
-            master, text="Adicionar Arquivo C/ Emails", command=self.add_email_file)
+            self.master, text="Adicionar Arquivo C/ Emails", command=self.add_email_file)
         self.emailDialogButton.pack(pady=10)
 
-        self.step_2 = ctk.CTkLabel(master, text="2° Passo")
+        self.step_2 = ctk.CTkLabel(self.master, text="2° Passo")
         self.step_2.pack(pady=10)
 
         self.fileDialogButton = ctk.CTkButton(
-            master, text="Adicionar Arquivo C/ Pedidos", command=self.add_file)
+            self.master, text="Adicionar Arquivo C/ Pedidos", command=self.add_file)
         self.fileDialogButton.pack(pady=10)
 
-        self.step_3 = ctk.CTkLabel(master, text="3° Passo")
+        self.step_3 = ctk.CTkLabel(self.master, text="3° Passo")
         self.step_3.pack(pady=10)
 
-        self.sendlateOrder_emails = ctk.CTkButton(master, text="Enviar Emails Atrasados", command=lambda m="corrective": self.clickevent(m))
+        self.sendlateOrder_emails = ctk.CTkButton(self.master, text="Enviar Emails Atrasados", command=lambda m="corrective": self.clickevent(m))
         self.sendlateOrder_emails.pack(pady=10)
 
         self.sendPreventive_emails = ctk.CTkButton(
-            master, text="Enviar Emails Preventivos", command=lambda m="preventive": self.clickevent(m))
+            self.master, text="Enviar Emails Preventivos", command=lambda m="preventive": self.clickevent(m))
         self.sendPreventive_emails.pack(pady=10)
 
-        self.lightImage = ImageTk.PhotoImage(Image.open("./src/light.png").resize((100,50)))
-        self.darkImage = ImageTk.PhotoImage(Image.open("./src/dark.png").resize((100,50)))
+        self.lightImage = ctk.CTkImage(Image.open("./src/light.png"), size=(100,50))
+        self.darkImage = ctk.CTkImage(Image.open("./src/dark.png"), size=(100,50))
 
-        self.toggleThemeButton = ctk.CTkButton(master, text="", image=self.lightImage, bg_color="#EBEBEB", fg_color="#EBEBEB", width=40, height=20, command=self.toggleTheme)
+        self.toggleThemeButton = ctk.CTkButton(self.master, text="", image=self.lightImage, bg_color="#EBEBEB", fg_color="#EBEBEB", width=40, height=20, command=self.toggleTheme)
         self.toggleThemeButton['border']=0
         self.toggleThemeButton.pack(pady=20)
 
@@ -134,15 +134,14 @@ class interface():
     def dataValidation(self, emailData, ordersData):
         for error in self.emailDataError:
             if error in emailData.columns:
-                print(f"Coluna {error} está presente na planilha")
+                pass
             else:
-                print(f"Coluna {error} não está presente na planilha")
+                pass
                 self.leftCollumnsError.append(error)
         for error in self.dataError:
             if error in ordersData.columns:
-                print(f"Coluna {error} está presente na planilha")
+                pass
             else:
-                print(f"Coluna {error} não está presente na planilha")
                 self.leftCollumnsError.append(error)
 
         if(self.leftCollumnsError==[]):
@@ -192,8 +191,7 @@ class interface():
         # Ten days ahead Orders for preventive preventive treatment
         global dateTenDaysAhead
         dateTenDaysAhead = today_date + timedelta(days=11)
-        dateMask = (totalOrders['Data de entrega'] > today_date) & (
-            totalOrders['Data de entrega'] <= dateTenDaysAhead)
+        dateMask = (totalOrders['Data de entrega'] > today_date) & (totalOrders['Data de entrega'] <= dateTenDaysAhead)
         orders_tenDaysAhead = totalOrders.loc[dateMask]
 
         if (sendChoose == "corrective"):
@@ -340,10 +338,10 @@ class interface():
             self.cListBox.insert("END",Name)
         self.cListBox.grid(row=1, column=1, pady=10)
 
-        self.suppliersNumbers = ctk.StringVar()
-        self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+        self.cSuppliersNumbers = ctk.StringVar()
+        self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
-        self.totalSuppliersLabel = ctk.CTkLabel(self.cTopLevel, textvariable=self.suppliersNumbers)
+        self.totalSuppliersLabel = ctk.CTkLabel(self.cTopLevel, textvariable=self.cSuppliersNumbers)
         self.totalSuppliersLabel.grid(row=0, column=1, pady=10, padx=10)
 
         self.restoreButton = ctk.CTkButton(self.cTopLevel, text="Restaurar", command=self.restoreCorrectiveListTopLevel)
@@ -429,7 +427,7 @@ class interface():
 
         correctiveSuppliersList.pop(self.index)
 
-        self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+        self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
     def restoreCorrectiveListTopLevel(self):
         lastDeletedSupplier = len(self.cDeletedSuppliers)
@@ -471,7 +469,7 @@ class interface():
             if(self.cDeletedSuppliers==[]):
                 self.deletedListTopLevel.destroy()
 
-            self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+            self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
     def restorePreventiveListTopLevel(self):
         pLastDeletedSupplier = len(self.pDeletedSuppliers)
@@ -532,7 +530,7 @@ class interface():
                 self.emailCcList.pop(self.index)
                 break
 
-    def SendCorrectiveEmail(self, suppliersList):
+    def sendCorrectiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
         
         time.sleep(3)
@@ -556,7 +554,8 @@ class interface():
             """
             email = outlook.CreateItem(0)
             time.sleep(1)
-            email.To = f'{supplier.Email}'
+            #email.To = f'{supplier.Email}'
+            email.To = "rafael.cordeiro@edu.unifil.br"
 
             if(self.emailCcList==[]):
                 pass
@@ -572,23 +571,15 @@ class interface():
 
             suppliersList.pop(0)
             self.cListBox.delete(0)
-            self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+            self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
         if(suppliersList==[]):
             playsound("./src/Notify.wav", block=False)
+            self.isCorrectiveEmailSended = True
             self.EmailsSendPopUp()
-
-        self.isCorrectiveEmailSended = True
     
     def EmailsSendPopUp(self):
-        self.EmailSend = ctk.CTkToplevel()
-        self.EmailSend.title("Concluido")
-        self.EmailSend.geometry("300x150")
-        self.EmailSend.grab_set()
-        self.Message = ctk.CTkLabel(self.EmailSend, text="Todos os emails foram enviados com sucesso!")
-        self.Message.pack(pady=10)
-        self.closePopUp = ctk.CTkButton(self.EmailSend, text="Ok", command=self.EmailSend.destroy)
-        self.closePopUp.pack(pady=10)
+        emailSendMessage = CTkMessagebox(title="Concluído!", message="Todos os emails foram enviados com sucesso!", option_1="Ok", icon="check", text_color=f"{self.listBoxTextColor}")
 
     def EmptyFilePathPopUp(self):
         self.emptyFilePathTopLevel = ctk.CTkToplevel()
@@ -602,10 +593,11 @@ class interface():
         self.emptyFilePathButton = ctk.CTkButton(self.emptyFilePathTopLevel, text="OK", command=self.emptyFilePathTopLevel.destroy)
         self.emptyFilePathButton.pack(pady=10)
 
-    def SendPreventiveEmail(self, suppliersList):
+    def sendPreventiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
-        time.sleep(1)
-        for supplier in suppliersList:
+
+        time.sleep(3)
+        for supplier in suppliersList[:]:
             pLateOrdersHTML = supplier.TotalOrders.to_html(
                 col_space=50, justify='center')
             preventiveEmailBody = f"""
@@ -623,7 +615,8 @@ class interface():
             """
             email = outlook.CreateItem(0)
             time.sleep(1)
-            email.To = f'{supplier.Email}'
+            #email.To = f'{supplier.Email}'
+            email.To = "rafael.cordeiro@edu.unifil.br"
 
             if(self.emailCcList==[]):
                 pass
@@ -633,18 +626,18 @@ class interface():
 
             email.Subject = f"Entrega Pedidos: {supplier.Name}"
             email.HTMLBody = (preventiveEmailBody)
+            time.sleep(1)
             email.Display()
             time.sleep(2)
 
             suppliersList.pop(0)
             self.pListBox.delete(0)
-            self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+            self.pSuppliersNumbers.set(f"Total de Fornecedores: {self.pListBox.size()}")
 
         if(suppliersList==[]):
             playsound("./src/Notify.wav", block=False)
+            self.isPreventiveEmailSended = True
             self.EmailsSendPopUp()
-
-        self.isPreventiveEmailSended = True
 
     def formatReportDate(self, ordersReport):
         ordersReport['Data de entrega'] = pd.to_datetime(
@@ -653,26 +646,37 @@ class interface():
 
     def EmailSendReport(self):
         formatDate = today_date.strftime("%d-%m-%Y")
-        sendedEmail = (self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True)
-        emptyLists = (correctiveSuppliersList == [] and preventiveSuppliersList == [])
-        if(sendedEmail and emptyLists):
-            reportDateMask = (self.ordersReport['Data de entrega'] < lastDay) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
+        
+        if(self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True):
+
+            reportDateMask = (self.ordersReport['Data de entrega'] < lastDay) | (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
             self.ordersReport = self.ordersReport.loc[reportDateMask]
             self.formatReportDate(self.ordersReport)
             self.ordersReport.to_excel(f"EmailsEnviados(Corretivo-Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
-        elif(self.isCorrectiveEmailSended==True and correctiveSuppliersList==[]):
+
+        elif(self.isCorrectiveEmailSended==True):
+
             self.ordersReport = self.ordersReport[self.ordersReport["Data de entrega"] < lastDay]
             self.formatReportDate(self.ordersReport)
             self.ordersReport.to_excel(f"EmailsEnviados(Corretivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
-        elif(self.isPreventiveEmailSended==True and preventiveSuppliersList==[]):
+
+        elif(self.isPreventiveEmailSended==True):
+
             preventiveDateMask = (self.ordersReport['Data de entrega'] > today_date) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
             self.ordersReport = self.ordersReport.loc[preventiveDateMask]
             self.formatReportDate(self.ordersReport)
             self.ordersReport.to_excel(f"EmailsEnviados(Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
+
         else:
-            pass
+            noSendedEmailWarn = CTkMessagebox(title="Atenção", text_color=f"{self.listBoxTextColor}", message="Nenhum email enviado, encerrando o programa!", icon="info", option_1="Ok")
 
-
+    def onClosing(self):
+        closeMessage = CTkMessagebox(text_color=f"{self.listBoxTextColor}", title="Fechar?", message="Tem certeza que deseja encerrar o programa?", icon="question", option_1="Cancelar", option_2="Fechar")
+        response = closeMessage.get()
+        if(response=="Fechar"):
+            self.EmailSendReport()
+            root.destroy()
+        
 root = ctk.CTk()
 root.iconbitmap(iconpath)
 userinterface = interface(root)
