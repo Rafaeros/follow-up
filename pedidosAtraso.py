@@ -53,6 +53,7 @@ class interface():
         self.index = -5
 
         self.master = master
+        #master.protocol('WM_DELETE_WINDOW', self.EmailSendReport)
         master.title("Follow Up F&K Group")
         master.geometry("500x500")
 
@@ -297,10 +298,11 @@ class interface():
 
         self.emailCcEntry = ctk.CTkEntry(self.pTopLevel, placeholder_text="Digite o Email em cópia:", width=200)
         self.emailCcEntry.grid(row=2, column=1)
+
         #testing bingind key presses
         #self.emailCcEntry.bind("<Return>", self.addCcEmail)
 
-        self.emailCcListBox = CTkListbox(self.pTopLevel, width=300, height=200)
+        self.emailCcListBox = CTkListbox(self.pTopLevel, width=300, height=200, text_color=f"{self.listBoxTextColor}")
         self.emailCcListBox.grid(row=3, column=1)
 
         if(self.emailCcList==[]):
@@ -353,12 +355,12 @@ class interface():
         self.cancelButton = ctk.CTkButton(self.cTopLevel,text="Cancelar", command=self.cTopLevel.destroy, width=300, height=50)
         self.cancelButton.grid(row=3, column=0, sticky="SW", padx=10)
 
-        self.emailCcEntry = ctk.CTkEntry(self.cTopLevel, placeholder_text="Email:", width=200)
+        self.emailCcEntry = ctk.CTkEntry(self.cTopLevel, placeholder_text="Digite o email em cópia:", width=200)
         self.emailCcEntry.grid(row=2, column=1)
         #testing bingind key presses
         #self.emailCcEntry.bind("<Return>", self.addCcEmail)
 
-        self.emailCcListBox = CTkListbox(self.cTopLevel, width=300, height=200)
+        self.emailCcListBox = CTkListbox(self.cTopLevel, width=300, height=200, text_color=f"{self.listBoxTextColor}")
         self.emailCcListBox.grid(row=3, column=1)
 
         if(self.emailCcList==[]):
@@ -443,21 +445,21 @@ class interface():
 
         elif(lastDeletedSupplier>0):
             self.deletedListTopLevel = ctk.CTkToplevel()
-            self.deletedListTopLevel.title("Index")
-            self.deletedListTopLevel.geometry("300x300")
+            self.deletedListTopLevel.title("Fornecedores deletados")
+            self.deletedListTopLevel.geometry("400x400")
             self.deletedListTopLevel.grab_set()
 
-            self.ctkIndexList = CTkListbox(self.deletedListTopLevel)
+            self.correctiveDeletedSupplierListBox = CTkListbox(self.deletedListTopLevel, text_color=f"{self.listBoxTextColor}")
             for fornecedor in self.cDeletedSuppliers:
-                self.ctkIndexList.insert("END",f"{fornecedor.Name}")
-            self.ctkIndexList.pack()
+                self.correctiveDeletedSupplierListBox.insert("END",f"{fornecedor.Name}")
+            self.correctiveDeletedSupplierListBox.pack()
 
             self.button = ctk.CTkButton(self.deletedListTopLevel, width=100, height=100, text="OK", command=self.restoreCorrectiveListCommand)
             self.button.pack(pady=10) #to aqui
 
     def restoreCorrectiveListCommand(self):
-            self.index = self.ctkIndexList.curselection()
-            self.ctkIndexList.delete(self.index)
+            self.index = self.correctiveDeletedSupplierListBox.curselection()
+            self.correctiveDeletedSupplierListBox.delete(self.index)
 
             self.cListBox.insert("END", self.cDeletedSuppliers[self.index].Name)
 
@@ -485,21 +487,20 @@ class interface():
 
         elif(pLastDeletedSupplier>0):
             self.deletedPListTopLevel = ctk.CTkToplevel()
-            self.deletedPListTopLevel.title("Index")
-            self.deletedPListTopLevel.geometry("300x300")
+            self.deletedPListTopLevel.title("Fornecedores deletados")
+            self.deletedPListTopLevel.geometry("400x400")
             self.deletedPListTopLevel.grab_set()
 
-            self.ctkPIndexList = CTkListbox(self.deletedPListTopLevel)
+            self.preventiveDeletedSupplierListBox = CTkListbox(self.deletedPListTopLevel, text_color=f"{self.listBoxTextColor}")
             for supplier in self.pDeletedSuppliers:
-                self.ctkPIndexList.insert("END",f"{supplier.Name}")
-            self.ctkPIndexList.pack()
-
+                self.preventiveDeletedSupplierListBox.insert("END",f"{supplier.Name}")
+            self.preventiveDeletedSupplierListBox.pack()
             self.pButton = ctk.CTkButton(self.deletedPListTopLevel, width=100, height=100, text="OK", command=self.restorePreventiveListCommand)
-            self.pButton.pack(pady=10) #to aqui
+            self.pButton.pack(pady=10)
 
     def restorePreventiveListCommand(self):
-            self.index = self.ctkPIndexList.curselection()
-            self.ctkPIndexList.delete(self.index)
+            self.index = self.preventiveDeletedSupplierListBox.curselection()
+            self.preventiveDeletedSupplierListBox.delete(self.index)
 
             self.pListBox.insert("END", self.pDeletedSuppliers[self.index].Name)
 
