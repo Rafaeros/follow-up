@@ -4,14 +4,14 @@ import datetime as dt
 from datetime import timedelta
 import time
 import win32com.client as win32
-import tkinter as tk
 import customtkinter as ctk
 from CTkListbox import *
-import pygame
+from playsound import playsound
+from PIL import Image, ImageTk
 
 # Getting today date
 today_date = dt.datetime.now()
-iconpath = "fk-logo.ico"
+iconpath = "src/fk-logo.ico"
 
 # Email style
 style = """
@@ -20,7 +20,6 @@ style = """
 padding: 5px;
 text-color: black;
 }
-
 thead {
     text-align: center;
     background-color: cadetblue;
@@ -40,23 +39,22 @@ td:nth-child(5) {
 
 class interface():
     def __init__(self, master):
-
+        
         #Declarating variables
         self.cDeletedSuppliers = []
         self.pDeletedSuppliers = [] 
         self.emailCcList = []
+        self.leftCollumnsError = []
         self.dataError = ["Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam", "Nacionalidade", "Rateio", "Situação"]
         self.emailDataError = ["Nome", "Email"]
-        self.leftCollumnsError = []
+        self.listBoxTextColor = "black"
+        self.isPreventiveEmailSended = False
+        self.isCorrectiveEmailSended = False
         self.index = -5
 
         self.master = master
         master.title("Follow Up F&K Group")
         master.geometry("500x500")
-        pygame.mixer.init()
-
-        self.appearance = ctk.set_appearance_mode("Dark")
-        self.theme = ctk.set_default_color_theme("dark-blue")
 
         self.step_1 = ctk.CTkLabel(master, text="1° Passo")
         self.step_1.pack(pady=30)
@@ -82,6 +80,28 @@ class interface():
             master, text="Enviar Emails Preventivos", command=lambda m="preventive": self.clickevent(m))
         self.sendPreventive_emails.pack(pady=10)
 
+        self.lightImage = ImageTk.PhotoImage(Image.open("./src/light.png").resize((100,50)))
+        self.darkImage = ImageTk.PhotoImage(Image.open("./src/dark.png").resize((100,50)))
+
+        self.toggleThemeButton = ctk.CTkButton(master, text="", image=self.lightImage, bg_color="#EBEBEB", fg_color="#EBEBEB", width=40, height=20, command=self.toggleTheme)
+        self.toggleThemeButton['border']=0
+        self.toggleThemeButton.pack(pady=20)
+
+    def toggleTheme(self):
+        currentColor = self.toggleThemeButton.cget("bg_color")
+        if(currentColor=='#EBEBEB'):
+            self.toggleThemeButton.configure(image=self.darkImage)
+            self.toggleThemeButton.configure(bg_color='#242424')
+            self.toggleThemeButton.configure(fg_color='#242424')
+            self.listBoxTextColor = "white"
+            self.appearance = ctk.set_appearance_mode("Dark")
+        else:
+            self.toggleThemeButton.configure(image=self.lightImage)
+            self.toggleThemeButton.configure(bg_color='#EBEBEB')
+            self.toggleThemeButton.configure(fg_color='#EBEBEB')
+            self.listBoxTextColor = "black"
+            self.appearance = ctk.set_appearance_mode("Light")
+
     def add_email_file(self):
         global email_data_filepath
         email_data_filepath = ctk.filedialog.askopenfilename()
@@ -89,7 +109,7 @@ class interface():
         if(email_data_filepath!=""):
             self.selectedArchive(email_data_filepath)
         else:
-            self.emptyFilePathPopUp()
+            self.EmptyFilePathPopUp()
 
     def add_file(self):
         global orders_data_filepath
@@ -98,7 +118,7 @@ class interface():
         if(orders_data_filepath!=""):
             self.selectedArchive(orders_data_filepath)
         else:
-            self.emptyFilePathPopUp()
+            self.EmptyFilePathPopUp()
 
     def format_data(self, Orders):
         Orders.pop(Orders.columns[0])
@@ -108,8 +128,7 @@ class interface():
         Orders['Data de entrega'] = pd.to_datetime(
             Orders['Data de entrega'], format='%d/%m/%Y')
 
-        Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime(
-            "%d/%m/%Y   ")
+        Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime("%d/%m/%Y")
 
     def dataValidation(self, emailData, ordersData):
         for error in self.emailDataError:
@@ -161,15 +180,19 @@ class interface():
 
         totalOrders['Data de entrega'] = pd.to_datetime(
             totalOrders['Data de entrega'], format='%d/%m/%Y')
+        
+        self.ordersReport = totalOrders
 
         # Late Orders for corrective treatment
+        global lastDay
         lastDay = today_date - timedelta(days=1)
         total_late_orders = totalOrders[totalOrders['Data de entrega'] < lastDay]
 
         # Ten days ahead Orders for preventive preventive treatment
-        date_tenDaysAhead = today_date + timedelta(days=11)
+        global dateTenDaysAhead
+        dateTenDaysAhead = today_date + timedelta(days=11)
         dateMask = (totalOrders['Data de entrega'] > today_date) & (
-            totalOrders['Data de entrega'] <= date_tenDaysAhead)
+            totalOrders['Data de entrega'] <= dateTenDaysAhead)
         orders_tenDaysAhead = totalOrders.loc[dateMask]
 
         if (sendChoose == "corrective"):
@@ -200,7 +223,6 @@ class interface():
 
                 correctiveSuppliersList.append(
                     Supplier(Name, f"{joincCurrent_email}", lateOrders))
-                # Supplier(Name, Email, Totalorders, Index)
 
         elif (sendChoose == "preventive"):
             global preventiveSuppliersNamesList
@@ -228,10 +250,6 @@ class interface():
 
                 preventiveSuppliersList.append(
                     Supplier(Name, pCurrent_email, preventiveOrders))
-                #Class Supplier(Name, Email, Orders)
-
-            # Comando para gerar arquivos excel com base nos total_late_orders e nomes de cada fornecedor
-            # PedidosAtrasados.to_excel(f'total_late_orders{fornecedor[0]}.xlsx')
 
     def clickevent(self, click):
         global sendChoose
@@ -257,7 +275,7 @@ class interface():
         self.pTopLevel.rowconfigure(4, weight=3)
         self.pTopLevel.rowconfigure(5, weight=3)
 
-        self.pListBox = CTkListbox(self.pTopLevel, width=700, height=250)
+        self.pListBox = CTkListbox(self.pTopLevel, width=700, height=250, text_color=f"{self.listBoxTextColor}")
         for Name in preventiveSuppliersNames:
             self.pListBox.insert("END",Name)
         self.pListBox.grid(row=1, column=1, pady=10)
@@ -301,8 +319,6 @@ class interface():
         self.sendPEmailsButton.grid(row=3, column=2, sticky="SE", padx=10)
 
     def addCorrectiveWindow(self):
-        #Window configuration
-
         self.cTopLevel = ctk.CTkToplevel()
         self.cTopLevel.title("Enviando emails corretivos...")
         self.cTopLevel.state('zoomed')
@@ -317,7 +333,7 @@ class interface():
         self.cTopLevel.rowconfigure(4, weight=3)
         self.cTopLevel.rowconfigure(5, weight=3)
 
-        self.cListBox = CTkListbox(self.cTopLevel, width=700, height=250)
+        self.cListBox = CTkListbox(self.cTopLevel, width=700, height=250, text_color=f"{self.listBoxTextColor}")
         for Name in correctiveSuppliersNames:
             self.cListBox.insert("END",Name)
         self.cListBox.grid(row=1, column=1, pady=10)
@@ -366,7 +382,7 @@ class interface():
         self.archiveTopLevel.geometry("300x200")
         self.archiveTopLevel.grab_set()
 
-        self.playNotificationSound()
+        playsound("./src/Notify.wav", block=False)
 
         #Shows "Selected Arqhive" in the window
         self.selectedArchiveLabel = ctk.CTkLabel(self.archiveTopLevel, text="Arquivo selecionado:", pady=10,padx=10)
@@ -515,11 +531,7 @@ class interface():
                 self.emailCcList.pop(self.index)
                 break
 
-    def playNotificationSound(self):
-        pygame.mixer.music.load('./Notify.wav')
-        pygame.mixer.music.play(loops=0)
-
-    def sendCorrectiveEmail(self, suppliersList):
+    def SendCorrectiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
         
         time.sleep(3)
@@ -562,20 +574,22 @@ class interface():
             self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
         if(suppliersList==[]):
-            self.playNotificationSound()
+            playsound("./src/Notify.wav", block=False)
             self.EmailsSendPopUp()
+
+        self.isCorrectiveEmailSended = True
     
     def EmailsSendPopUp(self):
         self.EmailSend = ctk.CTkToplevel()
         self.EmailSend.title("Concluido")
         self.EmailSend.geometry("300x150")
         self.EmailSend.grab_set()
-        self.Message = ctk.CTkLabel(self.EmailSend, text="Todos oes emails foram enviados com sucesso!")
+        self.Message = ctk.CTkLabel(self.EmailSend, text="Todos os emails foram enviados com sucesso!")
         self.Message.pack(pady=10)
         self.closePopUp = ctk.CTkButton(self.EmailSend, text="Ok", command=self.EmailSend.destroy)
         self.closePopUp.pack(pady=10)
 
-    def emptyFilePathPopUp(self):
+    def EmptyFilePathPopUp(self):
         self.emptyFilePathTopLevel = ctk.CTkToplevel()
         self.emptyFilePathTopLevel.title("Atenção")
         self.emptyFilePathTopLevel.geometry("300x150")
@@ -587,7 +601,7 @@ class interface():
         self.emptyFilePathButton = ctk.CTkButton(self.emptyFilePathTopLevel, text="OK", command=self.emptyFilePathTopLevel.destroy)
         self.emptyFilePathButton.pack(pady=10)
 
-    def sendPreventiveEmail(self, suppliersList):
+    def SendPreventiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
         time.sleep(1)
         for supplier in suppliersList:
@@ -626,7 +640,37 @@ class interface():
             self.suppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
 
         if(suppliersList==[]):
+            playsound("./src/Notify.wav", block=False)
             self.EmailsSendPopUp()
+
+        self.isPreventiveEmailSended = True
+
+    def formatReportDate(self, ordersReport):
+        ordersReport['Data de entrega'] = pd.to_datetime(
+            ordersReport['Data de entrega'], format='%d/%m/%Y')
+        ordersReport['Data de entrega'] = ordersReport["Data de entrega"].dt.strftime("%d/%m/%Y")
+
+    def EmailSendReport(self):
+        formatDate = today_date.strftime("%d-%m-%Y")
+        sendedEmail = (self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True)
+        emptyLists = (correctiveSuppliersList == [] and preventiveSuppliersList == [])
+        if(sendedEmail and emptyLists):
+            reportDateMask = (self.ordersReport['Data de entrega'] < lastDay) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
+            self.ordersReport = self.ordersReport.loc[reportDateMask]
+            self.formatReportDate(self.ordersReport)
+            self.ordersReport.to_excel(f"EmailsEnviados(Corretivo-Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
+        elif(self.isCorrectiveEmailSended==True and correctiveSuppliersList==[]):
+            self.ordersReport = self.ordersReport[self.ordersReport["Data de entrega"] < lastDay]
+            self.formatReportDate(self.ordersReport)
+            self.ordersReport.to_excel(f"EmailsEnviados(Corretivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
+        elif(self.isPreventiveEmailSended==True and preventiveSuppliersList==[]):
+            preventiveDateMask = (self.ordersReport['Data de entrega'] > today_date) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
+            self.ordersReport = self.ordersReport.loc[preventiveDateMask]
+            self.formatReportDate(self.ordersReport)
+            self.ordersReport.to_excel(f"EmailsEnviados(Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
+        else:
+            pass
+
 
 root = ctk.CTk()
 root.iconbitmap(iconpath)

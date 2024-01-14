@@ -1,0 +1,7 @@
+.vscode
+__pycache__
+*.xlsx
+*.csv
+build
+dist
+pedidosAtraso.spec
