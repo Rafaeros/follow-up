@@ -554,8 +554,7 @@ class interface():
             """
             email = outlook.CreateItem(0)
             time.sleep(1)
-            #email.To = f'{supplier.Email}'
-            email.To = "rafael.cordeiro@edu.unifil.br"
+            email.To = f'{supplier.Email}'
 
             if(self.emailCcList==[]):
                 pass
@@ -566,7 +565,7 @@ class interface():
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
             time.sleep(1)
-            email.Display()
+            email.Send()
             time.sleep(2)
 
             suppliersList.pop(0)
@@ -615,8 +614,7 @@ class interface():
             """
             email = outlook.CreateItem(0)
             time.sleep(1)
-            #email.To = f'{supplier.Email}'
-            email.To = "rafael.cordeiro@edu.unifil.br"
+            email.To = f'{supplier.Email}'
 
             if(self.emailCcList==[]):
                 pass
@@ -627,7 +625,7 @@ class interface():
             email.Subject = f"Entrega Pedidos: {supplier.Name}"
             email.HTMLBody = (preventiveEmailBody)
             time.sleep(1)
-            email.Display()
+            email.Send()
             time.sleep(2)
 
             suppliersList.pop(0)
