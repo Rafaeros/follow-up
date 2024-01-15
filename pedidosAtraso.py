@@ -12,7 +12,7 @@ from PIL import Image
 
 # Getting today date
 today_date = dt.datetime.now()
-iconpath = "src/fk-logo.ico"
+iconpath = "./src/fk-logo.ico"
 
 # Email style
 style = """
@@ -61,24 +61,24 @@ class interface():
         self.step_1.pack(pady=30)
 
         self.emailDialogButton = ctk.CTkButton(
-            self.master, text="Adicionar Arquivo C/ Emails", command=self.add_email_file)
+            self.master, text="Adicionar Arquivo C/ Emails", command=self.addEmailFile)
         self.emailDialogButton.pack(pady=10)
 
         self.step_2 = ctk.CTkLabel(self.master, text="2° Passo")
         self.step_2.pack(pady=10)
 
         self.fileDialogButton = ctk.CTkButton(
-            self.master, text="Adicionar Arquivo C/ Pedidos", command=self.add_file)
+            self.master, text="Adicionar Arquivo C/ Pedidos", command=self.addFile)
         self.fileDialogButton.pack(pady=10)
 
         self.step_3 = ctk.CTkLabel(self.master, text="3° Passo")
         self.step_3.pack(pady=10)
 
-        self.sendlateOrder_emails = ctk.CTkButton(self.master, text="Enviar Emails Atrasados", command=lambda m="corrective": self.clickevent(m))
+        self.sendlateOrder_emails = ctk.CTkButton(self.master, text="Enviar Emails Atrasados", command=lambda m="corrective": self.clickEvent(m))
         self.sendlateOrder_emails.pack(pady=10)
 
         self.sendPreventive_emails = ctk.CTkButton(
-            self.master, text="Enviar Emails Preventivos", command=lambda m="preventive": self.clickevent(m))
+            self.master, text="Enviar Emails Preventivos", command=lambda m="preventive": self.clickEvent(m))
         self.sendPreventive_emails.pack(pady=10)
 
         self.lightImage = ctk.CTkImage(Image.open("./src/light.png"), size=(100,50))
@@ -103,25 +103,25 @@ class interface():
             self.listBoxTextColor = "black"
             self.appearance = ctk.set_appearance_mode("Light")
 
-    def add_email_file(self):
+    def addEmailFile(self):
         global email_data_filepath
         email_data_filepath = ctk.filedialog.askopenfilename()
         email_data_filepath = "".join(email_data_filepath)
         if(email_data_filepath!=""):
-            self.selectedArchive(email_data_filepath)
+            self.selectedArchive(email_data_filepath, "Emails")
         else:
-            self.EmptyFilePathPopUp()
+            self.emptyFilePathPopUp()
 
-    def add_file(self):
+    def addFile(self):
         global orders_data_filepath
         orders_data_filepath = ctk.filedialog.askopenfilename()
         orders_data_filepath = "".join(orders_data_filepath)
         if(orders_data_filepath!=""):
-            self.selectedArchive(orders_data_filepath)
+            self.selectedArchive(orders_data_filepath, "Pedidos")
         else:
-            self.EmptyFilePathPopUp()
+            self.emptyFilePathPopUp()
 
-    def format_data(self, Orders):
+    def formatData(self, Orders):
         Orders.pop(Orders.columns[0])
 
         Orders.index += 1
@@ -164,7 +164,7 @@ class interface():
         self.errorWarnToplevel.wait_window()
         self.leftCollumnsError.clear()
 
-    def data_push(self):
+    def dataPush(self):
         suppliersData = pd.read_excel(email_data_filepath)
         totalOrders = pd.read_excel(orders_data_filepath)
 
@@ -211,7 +211,7 @@ class interface():
             for Name in correctiveSuppliersNames:
                 lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == Name, [
                     "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
-                self.format_data(lateOrders)
+                self.fformatData(lateOrders)
 
                 cCurrent_email = emails_data.loc[emails_data['Nome'] == Name, [
                     "Email"]].to_string(index=False, header=False)
@@ -242,7 +242,7 @@ class interface():
                 preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == Name, [
                     "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
 
-                self.format_data(preventiveOrders)
+                self.formatData(preventiveOrders)
 
                 pCurrent_email = emails_data.loc[emails_data['Nome'] == Name , ["Email"]]
                 pCurrent_email = pCurrent_email.to_string(header=False, index=False)
@@ -250,10 +250,10 @@ class interface():
                 preventiveSuppliersList.append(
                     Supplier(Name, pCurrent_email, preventiveOrders))
 
-    def clickevent(self, click):
+    def clickEvent(self, click):
         global sendChoose
         sendChoose = click
-        self.data_push()
+        self.dataPush()
         if(sendChoose=="corrective"):
             self.addCorrectiveWindow()
         elif(sendChoose=="preventive"):
@@ -376,18 +376,8 @@ class interface():
         self.sendCEmailsButton = ctk.CTkButton(self.cTopLevel, text="Enviar Email", command=lambda: self.sendCorrectiveEmail(correctiveSuppliersList), width=300, height=50)
         self.sendCEmailsButton.grid(row=3, column=2, sticky="SE", padx=10)
     
-    def selectedArchive(self, path):
-        self.archiveTopLevel = ctk.CTkToplevel()
-        self.archiveTopLevel.title("Arquivo selecionado")
-        self.archiveTopLevel.geometry("300x200")
-        self.archiveTopLevel.grab_set()
-
-        playsound("./src/Notify.wav", block=False)
-
-        #Shows "Selected Arqhive" in the window
-        self.selectedArchiveLabel = ctk.CTkLabel(self.archiveTopLevel, text="Arquivo selecionado:", pady=10,padx=10)
-        self.selectedArchiveLabel.pack(pady=10,padx=10)
-
+    def selectedArchive(self, path, dataType):
+        self.dataType = dataType
         #splits the file path
         splitFilePath = path.split('/')
         splitLen = len(splitFilePath)-1
@@ -396,12 +386,8 @@ class interface():
         #underline text configuration
         underlineText = ctk.CTkFont(underline=True)
 
-        #Archive name label show
-        self.selectedArchiveNameLabel = ctk.CTkLabel(self.archiveTopLevel, font=underlineText, text=fileName)
-        self.selectedArchiveNameLabel.pack(pady=10, padx=10)
-
-        self.okButton = ctk.CTkButton(self.archiveTopLevel, text="OK", command=self.archiveTopLevel.destroy)
-        self.okButton.pack(pady=20, padx=20)
+        playsound("./src/Notify.wav", block=False)
+        showArchive = CTkMessagebox(title=f"Arquivo de {self.dataType}", message=f"Arquivo selecionado: {fileName}", icon="check", text_color=f"{self.listBoxTextColor}")
 
     def deletePreventiveSelectedItem(self):
         self.index = self.pListBox.curselection()
@@ -575,22 +561,13 @@ class interface():
         if(suppliersList==[]):
             playsound("./src/Notify.wav", block=False)
             self.isCorrectiveEmailSended = True
-            self.EmailsSendPopUp()
+            self.emailsSendPopUp()
     
-    def EmailsSendPopUp(self):
+    def emailsSendPopUp(self):
         emailSendMessage = CTkMessagebox(title="Concluído!", message="Todos os emails foram enviados com sucesso!", option_1="Ok", icon="check", text_color=f"{self.listBoxTextColor}")
 
-    def EmptyFilePathPopUp(self):
-        self.emptyFilePathTopLevel = ctk.CTkToplevel()
-        self.emptyFilePathTopLevel.title("Atenção")
-        self.emptyFilePathTopLevel.geometry("300x150")
-        self.emptyFilePathTopLevel.grab_set()
-
-        self.emptyFilePathWarn = ctk.CTkLabel(self.emptyFilePathTopLevel, text="Nenhum arquivo foi selecionado!")
-        self.emptyFilePathWarn.pack(pady=10)
-
-        self.emptyFilePathButton = ctk.CTkButton(self.emptyFilePathTopLevel, text="OK", command=self.emptyFilePathTopLevel.destroy)
-        self.emptyFilePathButton.pack(pady=10)
+    def emptyFilePathPopUp(self):
+        emptyFilePathWarn = CTkMessagebox(title="Atenção", message="Nenhum arquivo foi selecionado!", icon='warning', text_color=f"{self.listBoxTextColor}", option_1="Ok")
 
     def sendPreventiveEmail(self, suppliersList):
         outlook = win32.Dispatch("Outlook.Application")
@@ -635,14 +612,14 @@ class interface():
         if(suppliersList==[]):
             playsound("./src/Notify.wav", block=False)
             self.isPreventiveEmailSended = True
-            self.EmailsSendPopUp()
+            self.emailsSendPopUp()
 
     def formatReportDate(self, ordersReport):
         ordersReport['Data de entrega'] = pd.to_datetime(
             ordersReport['Data de entrega'], format='%d/%m/%Y')
         ordersReport['Data de entrega'] = ordersReport["Data de entrega"].dt.strftime("%d/%m/%Y")
 
-    def EmailSendReport(self):
+    def emailSendReport(self):
         formatDate = today_date.strftime("%d-%m-%Y")
         
         if(self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True):
@@ -672,7 +649,7 @@ class interface():
         closeMessage = CTkMessagebox(text_color=f"{self.listBoxTextColor}", title="Fechar?", message="Tem certeza que deseja encerrar o programa?", icon="question", option_1="Cancelar", option_2="Fechar")
         response = closeMessage.get()
         if(response=="Fechar"):
-            self.EmailSendReport()
+            self.emailSendReport()
             root.destroy()
         
 root = ctk.CTk()
