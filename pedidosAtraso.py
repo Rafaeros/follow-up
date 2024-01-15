@@ -147,21 +147,11 @@ class interface():
         if(self.leftCollumnsError==[]):
             pass
         else:
-            self.dataWarnTopLevel(self.leftCollumnsError)
+            self.dataValidationWarn(self.leftCollumnsError)
 
-    def dataWarnTopLevel(self, errorsList):
-        self.errorWarnToplevel = ctk.CTkToplevel()
-        self.errorWarnToplevel.title("Erro: planilha sem as colunas necessárias")
-        self.errorWarnToplevel.geometry("400x200")
-        self.errorWarnToplevel.grab_set()
+    def dataValidationWarn(self, errorsList):
         errorsWarnText = ", ".join(errorsList)
-        self.errorsWarnLabel = ctk.CTkLabel(self.errorWarnToplevel, text="Colunas não encontradas: ", wraplength=400)
-        self.errorsWarnLabel.pack(pady=10)
-        self.errorsListLabel = ctk.CTkLabel(self.errorWarnToplevel, text=f"{errorsWarnText}", wraplength=300)
-        self.errorsListLabel.pack(pady=10)
-        self.closeErrorTopLevelButton = ctk.CTkButton(self.errorWarnToplevel, text="OK", command=self.errorWarnToplevel.destroy)
-        self.closeErrorTopLevelButton.pack(pady=10)
-        self.errorWarnToplevel.wait_window()
+        dataValidationMessage = CTkMessagebox(title="Erro: Planilha sem as colunas necessárias!", message=f"Colunas não encontradas: {errorsWarnText}", text_color=f"{self.listBoxTextColor}", option_1="Ok", icon="warning")
         self.leftCollumnsError.clear()
 
     def dataPush(self):
@@ -211,7 +201,7 @@ class interface():
             for Name in correctiveSuppliersNames:
                 lateOrders = total_late_orders.loc[total_late_orders['Fornecedor'] == Name, [
                     "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
-                self.fformatData(lateOrders)
+                self.formatData(lateOrders)
 
                 cCurrent_email = emails_data.loc[emails_data['Nome'] == Name, [
                     "Email"]].to_string(index=False, header=False)
