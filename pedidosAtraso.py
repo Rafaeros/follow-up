@@ -49,6 +49,7 @@ class interface():
         self.dataError = ["Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam", "Nacionalidade", "Rateio", "Situação"]
         self.emailDataError = ["Nome", "Email"]
         self.listBoxTextColor = "black"
+        self.ordersReport = pd.DataFrame()
         self.isPreventiveEmailSended = False
         self.isCorrectiveEmailSended = False
         self.index = -5
@@ -495,7 +496,7 @@ class interface():
             self.emailCcListBox.insert("END", email)
             self.emailCcEntry.delete(0, 'end')
         else:
-            print("Nada foi preenchido")
+            pass
 
     def deleteCcEmail(self):
         self.index = self.emailCcListBox.curselection()
@@ -541,7 +542,7 @@ class interface():
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
             time.sleep(1)
-            email.Send()
+            email.Display()
             time.sleep(2)
 
             suppliersList.pop(0)
@@ -592,7 +593,7 @@ class interface():
             email.Subject = f"Entrega Pedidos: {supplier.Name}"
             email.HTMLBody = (preventiveEmailBody)
             time.sleep(1)
-            email.Send()
+            email.Display()
             time.sleep(2)
 
             suppliersList.pop(0)
@@ -610,37 +611,53 @@ class interface():
         ordersReport['Data de entrega'] = ordersReport["Data de entrega"].dt.strftime("%d/%m/%Y")
 
     def emailSendReport(self):
+
         formatDate = today_date.strftime("%d-%m-%Y")
+        print(formatDate)
+        correctiveData = self.ordersReport[self.ordersReport['Data de entrega'] < lastDay]
+        print(correctiveData)
+        reportDateMask = (self.ordersReport['Data de entrega'] > today_date) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
         
-        if(self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True):
+        preventiveData = self.ordersReport.loc[reportDateMask]
+        print(preventiveData)
 
-            reportDateMask = (self.ordersReport['Data de entrega'] < lastDay) | (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
-            self.ordersReport = self.ordersReport.loc[reportDateMask]
-            self.formatReportDate(self.ordersReport)
-            self.ordersReport.to_excel(f"EmailsEnviados(Corretivo-Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
+        if(self.isPreventiveEmailSended==True & self.isCorrectiveEmailSended==True):
 
-        elif(self.isCorrectiveEmailSended==True):
+            time.sleep(1)
+            totalOrdersReport = pd.concat([correctiveData, preventiveData])
 
-            self.ordersReport = self.ordersReport[self.ordersReport["Data de entrega"] < lastDay]
-            self.formatReportDate(self.ordersReport)
-            self.ordersReport.to_excel(f"EmailsEnviados(Corretivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
+            time.sleep(1)
+            self.formatReportDate(totalOrdersReport)
+            time.sleep(2)
+            totalOrdersReport.to_excel(f"EmailsEnviados(Corretivo-Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
 
-        elif(self.isPreventiveEmailSended==True):
+        elif(self.isCorrectiveEmailSended==True & self.isPreventiveEmailSended==False):
 
-            preventiveDateMask = (self.ordersReport['Data de entrega'] > today_date) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
-            self.ordersReport = self.ordersReport.loc[preventiveDateMask]
-            self.formatReportDate(self.ordersReport)
-            self.ordersReport.to_excel(f"EmailsEnviados(Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
+            time.sleep(1)
+            self.formatReportDate(correctiveData)
+            time.sleep(2)
+            correctiveData.to_excel(f"EmailsEnviados(Corretivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
 
+        elif(self.isPreventiveEmailSended==True & self.isCorrectiveEmailSended==False):
+
+            time.sleep(1)
+            self.formatReportDate(preventiveData)
+            time.sleep(2)
+            preventiveData.to_excel(f"EmailsEnviados(Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
         else:
-            noSendedEmailWarn = CTkMessagebox(title="Atenção", text_color=f"{self.listBoxTextColor}", message="Nenhum email enviado, encerrando o programa!", icon="info", option_1="Ok")
+            pass
 
     def onClosing(self):
         closeMessage = CTkMessagebox(text_color=f"{self.listBoxTextColor}", title="Fechar?", message="Tem certeza que deseja encerrar o programa?", icon="question", option_1="Cancelar", option_2="Fechar")
         response = closeMessage.get()
         if(response=="Fechar"):
-            self.emailSendReport()
-            root.destroy()
+            if(self.ordersReport.empty):
+                noSendedEmailWarn = CTkMessagebox(title="Atenção", text_color=f"{self.listBoxTextColor}", message="Nenhum email enviado, encerrando o programa!", icon="info", option_1="Ok")
+                noSendedEmailWarn.wait_window()
+                root.destroy()
+            else:
+                self.emailSendReport()
+                root.destroy()
         
 root = ctk.CTk()
 root.iconbitmap(iconpath)
