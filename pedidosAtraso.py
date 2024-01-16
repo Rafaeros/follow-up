@@ -603,6 +603,8 @@ class interface():
         if(suppliersList==[]):
             playsound("./src/Notify.wav", block=False)
             self.isPreventiveEmailSended = True
+            print(self.isPreventiveEmailSended)
+            print(self.isCorrectiveEmailSended)
             self.emailsSendPopUp()
 
     def formatReportDate(self, ordersReport):
@@ -613,15 +615,11 @@ class interface():
     def emailSendReport(self):
 
         formatDate = today_date.strftime("%d-%m-%Y")
-        print(formatDate)
         correctiveData = self.ordersReport[self.ordersReport['Data de entrega'] < lastDay]
-        print(correctiveData)
         reportDateMask = (self.ordersReport['Data de entrega'] > today_date) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
-        
         preventiveData = self.ordersReport.loc[reportDateMask]
-        print(preventiveData)
 
-        if(self.isPreventiveEmailSended==True & self.isCorrectiveEmailSended==True):
+        if(self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True):
 
             time.sleep(1)
             totalOrdersReport = pd.concat([correctiveData, preventiveData])
@@ -631,14 +629,14 @@ class interface():
             time.sleep(2)
             totalOrdersReport.to_excel(f"EmailsEnviados(Corretivo-Preventivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
 
-        elif(self.isCorrectiveEmailSended==True & self.isPreventiveEmailSended==False):
+        elif(self.isCorrectiveEmailSended==True and self.isPreventiveEmailSended==False):
 
             time.sleep(1)
             self.formatReportDate(correctiveData)
             time.sleep(2)
             correctiveData.to_excel(f"EmailsEnviados(Corretivo) {formatDate}.xlsx", index=False, sheet_name=f"Relatório {formatDate}")
 
-        elif(self.isPreventiveEmailSended==True & self.isCorrectiveEmailSended==False):
+        elif(self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==False):
 
             time.sleep(1)
             self.formatReportDate(preventiveData)
