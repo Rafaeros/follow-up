@@ -12,7 +12,7 @@ from PIL import Image
 
 # Getting today date
 today_date = dt.datetime.now()
-iconpath = "./src/fk-logo.ico"
+iconpath = "src/fk-logo.ico"
 
 # Email style
 style = """
@@ -45,9 +45,12 @@ class interface():
         self.cDeletedSuppliers = []
         self.pDeletedSuppliers = [] 
         self.emailCcList = []
-        self.leftCollumnsError = []
+        self.missingEmailCollumns = []
+        self.missingOrdersCollumns = []
         self.dataError = ["Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam", "Nacionalidade", "Rateio", "Situação"]
         self.emailDataError = ["Nome", "Email"]
+        self.suppliersData = pd.DataFrame()
+        self.ordersData = pd.DataFrame()
         self.listBoxTextColor = "black"
         self.ordersReport = pd.DataFrame()
         self.isPreventiveEmailSended = False
@@ -108,8 +111,16 @@ class interface():
         global email_data_filepath
         email_data_filepath = ctk.filedialog.askopenfilename()
         email_data_filepath = "".join(email_data_filepath)
+
         if(email_data_filepath!=""):
             self.selectedArchive(email_data_filepath, "Emails")
+            self.suppliersData = pd.read_excel(email_data_filepath)
+            self.emailDataValidation(self.suppliersData)
+            if(self.missingEmailCollumns!=[]):
+                self.dataValidationWarn("Email")
+                self.suppliersData = pd.DataFrame()
+                email_data_filepath = ""
+                self.missingEmailCollumns.clear()
         else:
             self.emptyFilePathPopUp()
 
@@ -117,73 +128,81 @@ class interface():
         global orders_data_filepath
         orders_data_filepath = ctk.filedialog.askopenfilename()
         orders_data_filepath = "".join(orders_data_filepath)
+
         if(orders_data_filepath!=""):
             self.selectedArchive(orders_data_filepath, "Pedidos")
+            self.ordersData = pd.read_excel(orders_data_filepath)
+            self.dataValidation(self.ordersData)
+
+            if(self.missingOrdersCollumns!=[]):
+                self.dataValidationWarn("Orders")
+                self.ordersData = pd.DataFrame()
+                orders_data_filepath = ""
+                self.missingOrdersCollumns.clear()
+                
+        elif(orders_data_filepath!="" and self.missingOrdersCollumns!=[]):
+            self.dataValidationWarn("Orders")
+            self.ordersData = []
         else:
             self.emptyFilePathPopUp()
 
     def formatData(self, Orders):
         Orders.pop(Orders.columns[0])
-
         Orders.index += 1
-
-        Orders['Data de entrega'] = pd.to_datetime(
-            Orders['Data de entrega'], format='%d/%m/%Y')
-
+        Orders['Data de entrega'] = pd.to_datetime(Orders['Data de entrega'], format='%d/%m/%Y')
         Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime("%d/%m/%Y")
 
-    def dataValidation(self, emailData, ordersData):
+
+    def emailDataValidation(self, dataList):
         for error in self.emailDataError:
-            if error in emailData.columns:
+            if error in dataList.columns:
                 pass
             else:
                 pass
-                self.leftCollumnsError.append(error)
-        for error in self.dataError:
-            if error in ordersData.columns:
-                pass
-            else:
-                self.leftCollumnsError.append(error)
+                self.missingEmailCollumns.append(error)
 
-        if(self.leftCollumnsError==[]):
-            pass
-        else:
-            self.dataValidationWarn(self.leftCollumnsError)
+    def dataValidation(self, dataList):
+            for error in self.dataError:
+                if error in dataList.columns:
+                    pass
+                else:
+                    pass
+                    self.missingOrdersCollumns.append(error)
 
-    def dataValidationWarn(self, errorsList):
-        errorsWarnText = ", ".join(errorsList)
-        dataValidationMessage = CTkMessagebox(title="Erro: Planilha sem as colunas necessárias!", message=f"Colunas não encontradas: {errorsWarnText}", text_color=f"{self.listBoxTextColor}", option_1="Ok", icon="warning")
-        self.leftCollumnsError.clear()
+    def dataValidationWarn(self, dataType):
+        if(dataType=="Email"):
+            errorsWarnText = ", ".join(self.missingEmailCollumns)
+            emailDataValidationMessage = CTkMessagebox(title=f"Erro: Planilha de Emails sem as colunas necessárias!", message=f"Colunas não encontradas: {errorsWarnText}", text_color=f"{self.listBoxTextColor}", option_1="Ok", icon="warning")
+            errorsWarnText = ""
+        elif(dataType=="Orders"):
+            errorsWarnText = ", ".join(self.missingOrdersCollumns)
+            orderDataValidationMessage = CTkMessagebox(title=f"Erro: Planilha de Pedidos sem as colunas necessárias!", message=f"Colunas não encontradas: {errorsWarnText}", text_color=f"{self.listBoxTextColor}", option_1="Ok", icon="warning")
+
 
     def dataPush(self):
-        suppliersData = pd.read_excel(email_data_filepath)
-        totalOrders = pd.read_excel(orders_data_filepath)
+        emails_data = self.suppliersData[["Nome", "Email"]]
 
-        self.dataValidation(suppliersData, totalOrders)
-
-        emails_data = suppliersData[["Nome", "Email"]]
-
-        totalOrders = totalOrders[totalOrders['Situação'] != 'Envio pendente']
-        totalOrders = totalOrders[totalOrders['Nacionalidade'] == 'Brasil']
+        self.ordersData = self.ordersData[self.ordersData['Situação'] != 'Envio pendente']
+        self.ordersData = self.ordersData[self.ordersData['Nacionalidade'] == 'Brasil']
         MP_filter = ['MATERIA-PRIMA', 'MATERIA PRIMA INDUSTRIALIZAÇÃO',
                     'MATERIAL DE USO E CONSUMO']
-        totalOrders = totalOrders[totalOrders['Rateio'].isin(MP_filter)]
+        self.ordersData = self.ordersData[self.ordersData['Rateio'].isin(MP_filter)]
 
-        totalOrders['Data de entrega'] = pd.to_datetime(
-            totalOrders['Data de entrega'], format='%d/%m/%Y')
+        self.ordersData['Data de entrega'] = pd.to_datetime(
+            self.ordersData['Data de entrega'], format='%d/%m/%Y')
         
-        self.ordersReport = totalOrders
+        self.ordersReport = self.ordersData
 
         # Late Orders for corrective treatment
         global lastDay
         lastDay = today_date - timedelta(days=1)
-        total_late_orders = totalOrders[totalOrders['Data de entrega'] < lastDay]
+        total_late_orders = self.ordersData[self.ordersData['Data de entrega'] < lastDay]
 
         # Ten days ahead Orders for preventive preventive treatment
         global dateTenDaysAhead
         dateTenDaysAhead = today_date + timedelta(days=11)
-        dateMask = (totalOrders['Data de entrega'] > today_date) & (totalOrders['Data de entrega'] <= dateTenDaysAhead)
-        orders_tenDaysAhead = totalOrders.loc[dateMask]
+        dateMask = (self.ordersData['Data de entrega'] > today_date) & (self.ordersData['Data de entrega'] <= dateTenDaysAhead)
+        orders_tenDaysAhead = self.ordersData.loc[dateMask]
 
         if (sendChoose == "corrective"):
             global correctiveSuppliersNamesList
@@ -379,7 +398,8 @@ class interface():
 
         playsound("./src/Notify.wav", block=False)
         showArchive = CTkMessagebox(title=f"Arquivo de {self.dataType}", message=f"Arquivo selecionado: {fileName}", icon="check", text_color=f"{self.listBoxTextColor}")
-
+        showArchive.wait_window()
+        
     def deletePreventiveSelectedItem(self):
         self.index = self.pListBox.curselection()
         self.pListBox.delete(self.index)
