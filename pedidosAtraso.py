@@ -562,7 +562,7 @@ class interface():
             email.Subject = f"Pedidos atrasados {supplier.Name}"
             email.HTMLBody = (correctiveEmailBody)
             time.sleep(1)
-            email.Display()
+            email.Send()
             time.sleep(2)
 
             suppliersList.pop(0)
@@ -613,7 +613,7 @@ class interface():
             email.Subject = f"Entrega Pedidos: {supplier.Name}"
             email.HTMLBody = (preventiveEmailBody)
             time.sleep(1)
-            email.Display()
+            email.Send()
             time.sleep(2)
 
             suppliersList.pop(0)
