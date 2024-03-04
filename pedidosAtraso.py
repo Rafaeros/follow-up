@@ -258,12 +258,6 @@ class interface():
 
                 preventiveSuppliersList.append(
                     Supplier(Name, pCurrent_email, preventiveOrders))
-                
-                for sup in preventiveSuppliersList:
-                    print("NAme:", sup.Name)
-                    print("Email", sup.Email)
-                    print(type(sup.Email))
-                    print("Total orders",sup.TotalOrders)
 
     def clickEvent(self, click):
         global sendChoose
@@ -583,10 +577,10 @@ class interface():
                 self.WrongEmails.loc[len(self.WrongEmails)] = data
                 continue
 
-            if(suppliersList==[]):
-                    playsound("./src/Notify.wav", block=False)
-                    self.isCorrectiveEmailSended = True
-                    self.emailsSendPopUp()
+        if(suppliersList==[]):
+                playsound("./src/Notify.wav", block=False)
+                self.isCorrectiveEmailSended = True
+                self.emailsSendPopUp()
     
     def emailsSendPopUp(self):
         emailSendMessage = CTkMessagebox(title="Concluído!", message="Todos os emails foram enviados com sucesso!", option_1="Ok", icon="check", text_color=f"{self.listBoxTextColor}")
