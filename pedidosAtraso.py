@@ -564,17 +564,18 @@ class interface():
                 email.Subject = f"Pedidos atrasados {supplier.Name}"
                 email.HTMLBody = (correctiveEmailBody)
                 time.sleep(1)
-                email.Save()
-                email.send()
+                email.Send()
                 time.sleep(2)
 
                 suppliersList.pop(0)
                 self.cListBox.delete(0)
                 self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")   
-
             except Exception as error:
-                data = {'Fornecedor': supplier.Name, 'Email': supplier.Email, 'Erro': error}
-                self.WrongEmails.loc[len(self.WrongEmails)] = data
+                dataC = {"Fornecedor": supplier.Name, "Email": supplier.Email, "Erro": error}
+                self.WrongEmails.loc[len(self.WrongEmails)] = dataC
+                suppliersList.pop(0)
+                self.cListBox.delete(0)
+                self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
                 continue
 
         if(suppliersList==[]):
@@ -623,16 +624,18 @@ class interface():
                 email.Subject = f"Entrega Pedidos: {supplier.Name}"
                 email.HTMLBody = (preventiveEmailBody)
                 time.sleep(1)
-                email.Save()
-                email.send()
+                email.Send()
                 time.sleep(2)
 
                 suppliersList.pop(0)
                 self.pListBox.delete(0)
                 self.pSuppliersNumbers.set(f"Total de Fornecedores: {self.pListBox.size()}")
             except Exception as error:
-                data = {'Fornecedor': supplier.Name, 'Email': supplier.Email, 'Erro': error}
-                self.WrongEmails.loc[len(self.WrongEmails)] = data
+                dataP = {"Fornecedor": supplier.Name, "Email": supplier.Email, "Erro": error}
+                self.WrongEmails.loc[len(self.WrongEmails)] = dataP             
+                suppliersList.pop(0)
+                self.pListBox.delete(0)
+                self.pSuppliersNumbers.set(f"Total de Fornecedores: {self.pListBox.size()}")
                 continue
 
         if(suppliersList==[]):
@@ -681,14 +684,16 @@ class interface():
         closeMessage = CTkMessagebox(text_color=f"{self.listBoxTextColor}", title="Fechar?", message="Tem certeza que deseja encerrar o programa?", icon="question", option_1="Cancelar", option_2="Fechar")
         response = closeMessage.get()
         if(response=="Fechar"):
-            if(self.ordersReport.empty):
+            if(self.ordersReport.empty and self.WrongEmails.empty):
                 noSendedEmailWarn = CTkMessagebox(title="Atenção", text_color=f"{self.listBoxTextColor}", message="Nenhum email enviado, encerrando o programa!", icon="info", option_1="Ok")
                 noSendedEmailWarn.wait_window()
                 root.destroy()
             else:
                 self.emailSendReport()
-                self.WrongEmails.to_excel("ErroEmails.xlsx", index=False)
+                if(not self.WrongEmails.empty):
+                    self.WrongEmails.to_excel("Emails_Com_Erro.xlsx", index=False)
                 root.destroy()
+
         
 root = ctk.CTk()
 root.iconbitmap(iconpath)
