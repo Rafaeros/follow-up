@@ -51,6 +51,7 @@ class interface():
         self.emailDataError = ["Nome", "Email"]
         self.suppliersData = pd.DataFrame()
         self.ordersData = pd.DataFrame()
+        self.WrongEmails = pd.DataFrame(columns=["Fornecedor", "Email", "Erro"])
         self.listBoxTextColor = "black"
         self.ordersReport = pd.DataFrame()
         self.isPreventiveEmailSended = False
@@ -152,7 +153,6 @@ class interface():
         Orders['Data de entrega'] = pd.to_datetime(Orders['Data de entrega'], format='%d/%m/%Y')
         Orders['Data de entrega'] = Orders["Data de entrega"].dt.strftime("%d/%m/%Y")
 
-
     def emailDataValidation(self, dataList):
         for error in self.emailDataError:
             if error in dataList.columns:
@@ -177,7 +177,6 @@ class interface():
         elif(dataType=="Orders"):
             errorsWarnText = ", ".join(self.missingOrdersCollumns)
             orderDataValidationMessage = CTkMessagebox(title=f"Erro: Planilha de Pedidos sem as colunas necessárias!", message=f"Colunas não encontradas: {errorsWarnText}", text_color=f"{self.listBoxTextColor}", option_1="Ok", icon="warning")
-
 
     def dataPush(self):
         emails_data = self.suppliersData[["Nome", "Email"]]
@@ -259,6 +258,12 @@ class interface():
 
                 preventiveSuppliersList.append(
                     Supplier(Name, pCurrent_email, preventiveOrders))
+                
+                for sup in preventiveSuppliersList:
+                    print("NAme:", sup.Name)
+                    print("Email", sup.Email)
+                    print(type(sup.Email))
+                    print("Total orders",sup.TotalOrders)
 
     def clickEvent(self, click):
         global sendChoose
@@ -528,6 +533,7 @@ class interface():
                 break
 
     def sendCorrectiveEmail(self, suppliersList):
+        time.sleep(2)
         outlook = win32.Dispatch("Outlook.Application")
         
         time.sleep(3)
@@ -549,30 +555,38 @@ class interface():
             </body>
             </html>
             """
-            email = outlook.CreateItem(0)
-            time.sleep(1)
-            email.To = f'{supplier.Email}'
 
-            if(self.emailCcList==[]):
-                pass
-            else:
-                self.joinedEmail = "; ".join(self.emailCcList)
-                email.Cc = self.joinedEmail
+            try:
+                email = outlook.CreateItem(0)
+                time.sleep(1)
+                email.To = f'{supplier.Email}'
 
-            email.Subject = f"Pedidos atrasados {supplier.Name}"
-            email.HTMLBody = (correctiveEmailBody)
-            time.sleep(1)
-            email.Send()
-            time.sleep(2)
+                if(self.emailCcList==[]):
+                    pass
+                else:
+                    self.joinedEmail = "; ".join(self.emailCcList)
+                    email.Cc = self.joinedEmail
 
-            suppliersList.pop(0)
-            self.cListBox.delete(0)
-            self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")
+                email.Subject = f"Pedidos atrasados {supplier.Name}"
+                email.HTMLBody = (correctiveEmailBody)
+                time.sleep(1)
+                email.Save()
+                email.send()
+                time.sleep(2)
 
-        if(suppliersList==[]):
-            playsound("./src/Notify.wav", block=False)
-            self.isCorrectiveEmailSended = True
-            self.emailsSendPopUp()
+                suppliersList.pop(0)
+                self.cListBox.delete(0)
+                self.cSuppliersNumbers.set(f"Total de Fornecedores: {self.cListBox.size()}")   
+
+            except Exception as error:
+                data = {'Fornecedor': supplier.Name, 'Email': supplier.Email, 'Erro': error}
+                self.WrongEmails.loc[len(self.WrongEmails)] = data
+                continue
+
+            if(suppliersList==[]):
+                    playsound("./src/Notify.wav", block=False)
+                    self.isCorrectiveEmailSended = True
+                    self.emailsSendPopUp()
     
     def emailsSendPopUp(self):
         emailSendMessage = CTkMessagebox(title="Concluído!", message="Todos os emails foram enviados com sucesso!", option_1="Ok", icon="check", text_color=f"{self.listBoxTextColor}")
@@ -581,6 +595,7 @@ class interface():
         emptyFilePathWarn = CTkMessagebox(title="Atenção", message="Nenhum arquivo foi selecionado!", icon='warning', text_color=f"{self.listBoxTextColor}", option_1="Ok")
 
     def sendPreventiveEmail(self, suppliersList):
+        time.sleep(2)
         outlook = win32.Dispatch("Outlook.Application")
 
         time.sleep(3)
@@ -600,31 +615,35 @@ class interface():
             </body>
             </html>
             """
-            email = outlook.CreateItem(0)
-            time.sleep(1)
-            email.To = f'{supplier.Email}'
+            try:
+                email = outlook.CreateItem(0)
+                time.sleep(1)
+                email.To = f'{supplier.Email}'
 
-            if(self.emailCcList==[]):
-                pass
-            else:
-                self.joinedEmail = "; ".join(self.emailCcList)
-                email.Cc = self.joinedEmail
+                if(self.emailCcList==[]):
+                    pass
+                else:
+                    self.joinedEmail = "; ".join(self.emailCcList)
+                    email.Cc = self.joinedEmail
 
-            email.Subject = f"Entrega Pedidos: {supplier.Name}"
-            email.HTMLBody = (preventiveEmailBody)
-            time.sleep(1)
-            email.Send()
-            time.sleep(2)
+                email.Subject = f"Entrega Pedidos: {supplier.Name}"
+                email.HTMLBody = (preventiveEmailBody)
+                time.sleep(1)
+                email.Save()
+                email.send()
+                time.sleep(2)
 
-            suppliersList.pop(0)
-            self.pListBox.delete(0)
-            self.pSuppliersNumbers.set(f"Total de Fornecedores: {self.pListBox.size()}")
+                suppliersList.pop(0)
+                self.pListBox.delete(0)
+                self.pSuppliersNumbers.set(f"Total de Fornecedores: {self.pListBox.size()}")
+            except Exception as error:
+                data = {'Fornecedor': supplier.Name, 'Email': supplier.Email, 'Erro': error}
+                self.WrongEmails.loc[len(self.WrongEmails)] = data
+                continue
 
         if(suppliersList==[]):
             playsound("./src/Notify.wav", block=False)
             self.isPreventiveEmailSended = True
-            print(self.isPreventiveEmailSended)
-            print(self.isCorrectiveEmailSended)
             self.emailsSendPopUp()
 
     def formatReportDate(self, ordersReport):
@@ -640,7 +659,6 @@ class interface():
         preventiveData = self.ordersReport.loc[reportDateMask]
 
         if(self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True):
-
             time.sleep(1)
             totalOrdersReport = pd.concat([correctiveData, preventiveData])
 
@@ -675,6 +693,7 @@ class interface():
                 root.destroy()
             else:
                 self.emailSendReport()
+                self.WrongEmails.to_excel("ErroEmails.xlsx", index=False)
                 root.destroy()
         
 root = ctk.CTk()
