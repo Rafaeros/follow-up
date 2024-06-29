@@ -1,5 +1,6 @@
 import pandas as pd
-from Supplier import Supplier
+from PIL import Image
+from playsound import playsound
 import datetime as dt
 from datetime import timedelta
 import time
@@ -7,8 +8,9 @@ import win32com.client as win32
 import customtkinter as ctk
 from CTkListbox import *
 from CTkMessagebox import CTkMessagebox
-from playsound import playsound
-from PIL import Image
+from CTkSpinbox import *
+
+from Supplier import Supplier
 
 # Getting today date
 today_date = dt.datetime.now()
@@ -47,26 +49,38 @@ class interface():
         self.emailCcList = []
         self.missingEmailCollumns = []
         self.missingOrdersCollumns = []
+
         self.dataError = ["Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam", "Nacionalidade", "Rateio", "Situação"]
         self.emailDataError = ["Nome", "Email"]
+
+        self.listBoxTextColor = "black"
+
         self.suppliersData = pd.DataFrame()
         self.ordersData = pd.DataFrame()
         self.WrongEmails = pd.DataFrame(columns=["Fornecedor", "Email", "Erro"])
-        self.listBoxTextColor = "black"
         self.ordersReport = pd.DataFrame()
+
         self.isPreventiveEmailSended = False
         self.isCorrectiveEmailSended = False
+
         self.index = -5
+        self.spin_var = ctk.IntVar(value=10)
+
+        self.dateLabel = ctk.StringVar()
+        self.lastDay = today_date - timedelta(days=1)
+        self.dateAhead = today_date + timedelta(days=self.spin_var.get())
+        self.dateCount = f"{self.dateAhead.day:02d}/{self.dateAhead.month:02d}/{self.dateAhead.year}"
+        self.dateLabel.set(f"Seus pedidos serão cobrados até: {self.dateCount}")
 
         self.master.title("Follow Up F&K Group")
         self.master.protocol("WM_DELETE_WINDOW", self.onClosing)
-        self.master.geometry("500x500")
+        self.master.geometry("700x750")
 
         self.step_1 = ctk.CTkLabel(self.master, text="1° Passo")
         self.step_1.pack(pady=30)
 
         self.emailDialogButton = ctk.CTkButton(
-            self.master, text="Adicionar Arquivo C/ Emails", command=self.addEmailFile)
+        self.master, text="Adicionar Arquivo C/ Emails", command=self.addEmailFile)
         self.emailDialogButton.pack(pady=10)
 
         self.step_2 = ctk.CTkLabel(self.master, text="2° Passo")
@@ -86,12 +100,29 @@ class interface():
             self.master, text="Enviar Emails Preventivos", command=lambda m="preventive": self.clickEvent(m))
         self.sendPreventive_emails.pack(pady=10)
 
+        self.SpinBox = CTkSpinbox(self.master, start_value=10, min_value=10, max_value=35, step_value=5, scroll_value=5, variable=self.spin_var, command=self.updateDate)
+        self.SpinBox.pack(pady=20)
+
+        self.followingOrdersLabel = ctk.CTkLabel(self.master, textvariable=self.dateLabel)
+        self.followingOrdersLabel.pack(pady=20)
+    
+
         self.lightImage = ctk.CTkImage(Image.open("./src/light.png"), size=(100,50))
         self.darkImage = ctk.CTkImage(Image.open("./src/dark.png"), size=(100,50))
 
         self.toggleThemeButton = ctk.CTkButton(self.master, text="", image=self.lightImage, bg_color="#EBEBEB", fg_color="#EBEBEB", width=40, height=20, command=self.toggleTheme)
         self.toggleThemeButton['border']=0
         self.toggleThemeButton.pack(pady=20)
+
+    def updateDate(self, count):
+        self.dateAhead = today_date + timedelta(days=count)
+
+        year = self.dateAhead.year
+        month = self.dateAhead.month
+        day = self.dateAhead.day
+
+        self.dateCount = f"{day:02d}/{month:02d}/{year}"
+        self.dateLabel.set(f"Seus pedidos serão cobrados até: {self.dateCount}")
 
     def toggleTheme(self):
         currentColor = self.toggleThemeButton.cget("bg_color")
@@ -193,15 +224,11 @@ class interface():
         self.ordersReport = self.ordersData
 
         # Late Orders for corrective treatment
-        global lastDay
-        lastDay = today_date - timedelta(days=1)
-        total_late_orders = self.ordersData[self.ordersData['Data de entrega'] < lastDay]
+        total_late_orders = self.ordersData[self.ordersData['Data de entrega'] < self.lastDay]
 
-        # Ten days ahead Orders for preventive preventive treatment
-        global dateTenDaysAhead
-        dateTenDaysAhead = today_date + timedelta(days=11)
-        dateMask = (self.ordersData['Data de entrega'] > today_date) & (self.ordersData['Data de entrega'] <= dateTenDaysAhead)
-        orders_tenDaysAhead = self.ordersData.loc[dateMask]
+
+        dateMask = (self.ordersData['Data de entrega'] > today_date) & (self.ordersData['Data de entrega'] <= self.dateAhead)
+        ordersAhead = self.ordersData.loc[dateMask]
 
         if (sendChoose == "corrective"):
             global correctiveSuppliersNamesList
@@ -239,7 +266,7 @@ class interface():
 
             preventiveSuppliersNames = []
 
-            preventiveSuppliersNamesList = orders_tenDaysAhead.loc[:, ['Fornecedor']].drop_duplicates(
+            preventiveSuppliersNamesList = ordersAhead.loc[:, ['Fornecedor']].drop_duplicates(
                 subset="Fornecedor", keep="first").values.tolist()
             
             for Name in preventiveSuppliersNamesList:
@@ -248,7 +275,7 @@ class interface():
             preventiveSuppliersList = []
             for Name in preventiveSuppliersNames:
 
-                preventiveOrders = orders_tenDaysAhead.loc[orders_tenDaysAhead['Fornecedor'] == Name, [
+                preventiveOrders = ordersAhead.loc[ordersAhead['Fornecedor'] == Name, [
                     "Neg.", "Data de entrega", "Fornecedor", "Cod.", "Material", "Faltam"]].reset_index()
 
                 self.formatData(preventiveOrders)
@@ -651,8 +678,8 @@ class interface():
     def emailSendReport(self):
 
         formatDate = today_date.strftime("%d-%m-%Y")
-        correctiveData = self.ordersReport[self.ordersReport['Data de entrega'] < lastDay]
-        reportDateMask = (self.ordersReport['Data de entrega'] > today_date) & (self.ordersReport['Data de entrega'] <= dateTenDaysAhead)
+        correctiveData = self.ordersReport[self.ordersReport['Data de entrega'] < self.lastDay]
+        reportDateMask = (self.ordersReport['Data de entrega'] > today_date) & (self.ordersReport['Data de entrega'] <= self.dateAhead)
         preventiveData = self.ordersReport.loc[reportDateMask]
 
         if(self.isPreventiveEmailSended==True and self.isCorrectiveEmailSended==True):
@@ -694,7 +721,6 @@ class interface():
                     self.WrongEmails.to_excel("Emails_Com_Erro.xlsx", index=False)
                 root.destroy()
 
-        
 root = ctk.CTk()
 root.iconbitmap(iconpath)
 userinterface = interface(root)
