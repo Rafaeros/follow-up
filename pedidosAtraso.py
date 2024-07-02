@@ -19,23 +19,52 @@ iconpath = "src/fk-logo.ico"
 # Email style
 style = """
 <style>
+/* Aplica padding e cor de texto em todos os elementos */
 * {
-padding: 5px;
-text-color: black;
+    padding: 5px;
+    color: black;
+    box-sizing: border-box; /* Inclui padding e border na largura e altura total do elemento */
 }
+
+/* Estilo para o cabeçalho da tabela */
 thead {
     text-align: center;
-    background-color: cadetblue;
+    background-color: #5F9EA0; /* Cadetblue */
+    color: white; /* Texto branco para contraste */
 }
 
-tr, th,td {
+/* Estilo para linhas, cabeçalhos e células da tabela */
+tr, th, td {
     text-align: center;
-    justify-content: center;
+    vertical-align: middle; /* Alinhamento vertical ao centro */
+    padding: 10px; /* Padding para melhorar espaçamento */
 }
 
+/* Estilo alternado para linhas da tabela */
+tr:nth-child(even) {
+    background-color: #f2f2f2; /* Fundo cinza claro */
+}
+
+/* Estilo para células específicas */
 td:nth-child(5) {
     text-align: left;
-    background-color: red;
+    background-color: #FFCDD2; /* Vermelho claro para melhor legibilidade */
+}
+
+/* Estilo para a borda da tabela */
+table {
+    border-collapse: collapse; /* Remove espaçamento entre células */
+    width: 100%; /* Largura total */
+}
+
+/* Estilo para bordas das células */
+th, td {
+    border: 1px solid #ddd; /* Borda cinza clara */
+}
+
+/* Estilo para hover em linhas da tabela */
+tr:hover {
+    background-color: #ddd; /* Fundo cinza claro ao passar o mouse */
 }
 </style>
 """
@@ -631,8 +660,15 @@ class interface():
                 {style}
             </head>
             <body>
-                <h1>Olá:{supplier.Name}</h1>
-                <h2>Favor validar e confirmar a entrega desses pedidos conforme as datas previstas para estar aqui na F&K Group: </h2>
+                <p>Prezados,</p>
+                <p>Espero que estejam bem. Gostaria de confirmar e validar a entrega dos materiais solicitados conforme especificado no pedido enviado anteriormente. Este email serve para assegurar que todos os itens serão entregues na data estipulada.</p>
+                <p>Como acordado, a entrega está programada para ocorrer até as datas da tabela abaixo. Peço gentilmente que confirmem se essa previsão está alinhada com suas expectativas e necessidades.</p>
+                <p>Por favor, caso haja qualquer ajuste necessário ou alguma informação adicional que precisem fornecer, sintam-se à vontade para responder diretamente a este email</p>
+                <p>Além disso, gostaria de informar que estarei saindo de férias a partir de 08/07, com retorno previsto para o dia 23/07. Durante minha ausência, <strong>[Retornar para Guilherme, Denise ou Nicole]</strong> estará disponível para ajudar com qualquer questão relacionada a este pedido.</p>
+                <p>Agradeço desde já pela atenção e cooperação de todos.</p>
+                <p>Atenciosamente.</p>
+
+                <h3>Pedidos: </h3>
                 {pLateOrdersHTML}
             </body>
             </html>
