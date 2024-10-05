@@ -660,13 +660,26 @@ class interface():
                 {style}
             </head>
             <body>
-                <p>Prezados,</p>
-                <p>Espero que estejam bem. Gostaria de confirmar e validar a entrega dos materiais solicitados conforme especificado no pedido enviado anteriormente. Este email serve para assegurar que todos os itens serão entregues na data estipulada.</p>
-                <p>Como acordado, a entrega está programada para ocorrer até as datas da tabela abaixo. Peço gentilmente que confirmem se essa previsão está alinhada com suas expectativas e necessidades.</p>
-                <p>Por favor, caso haja qualquer ajuste necessário ou alguma informação adicional que precisem fornecer, sintam-se à vontade para responder diretamente a este email</p>
-                <p>Além disso, gostaria de informar que estarei saindo de férias a partir de 08/07, com retorno previsto para o dia 23/07. Durante minha ausência, <strong>[Retornar para Guilherme, Denise ou Nicole]</strong> estará disponível para ajudar com qualquer questão relacionada a este pedido.</p>
-                <p>Agradeço desde já pela atenção e cooperação de todos.</p>
-                <p>Atenciosamente.</p>
+                <p>Prezados</p>,
+
+                <p>
+                    Gostaria de confirmar e validar a entrega dos materiais solicitados conforme o pedido enviado anteriormente.
+                    Este contato visa assegurar que todos os itens serão entregues conforme as datas estipuladas. 
+                    Conforme acordado, as entregas estão programadas para ocorrer dentro dos prazos indicados na tabela abaixo. 
+                    Solicito, por gentileza, a confirmação de que essas previsões estão de acordo com as expectativas e necessidades de sua equipe.
+                </p>
+
+                <p style="color: red">
+                Importante: Para garantir o cumprimento do cronograma, solicito que os itens sejam faturados com antecedência adequada, 
+                permitindo que cheguem à nossa empresa na data prevista no pedido. Este procedimento é essencial para que possamos
+                manter o cronograma conforme o planejado.
+                </p>
+
+                <p>Caso haja necessidade de ajustes ou informações adicionais, por favor, entrem em contato diretamente por este e-mail.</p>
+
+                <p>Agradeço pela atenção e colaboração.</p>
+                
+                <p>Atenciosamente, </p>
 
                 <h3>Pedidos: </h3>
                 {pLateOrdersHTML}
