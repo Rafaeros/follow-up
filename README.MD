@@ -36,7 +36,11 @@ Para executar o projeto, siga as instruções abaixo:
 ## 🤝 Contribuições
 Contribuições são bem-vindas! Sinta-se à vontade para abrir uma issue para reportar um problema ou sugerir uma melhoria. Para contribuir com código, faça um fork do projeto, crie uma branch com suas alterações e abra um pull request.
 
+## 📄 Licença
 
+Este projeto está licenciado sob a Licença MIT - consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
 ##
 
 Desenvolvido com Python 🐍 para simplificar o follow-up com fornecedores.
