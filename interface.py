@@ -9,7 +9,7 @@ from supplier_data import Suppliers
 from send_email import send_corrective_email, send_preventive_email
 
 
-class NewInterface(ctk.CTk):
+class Interface(ctk.CTk):
     """
     Main application interface.
     """
@@ -179,7 +179,3 @@ class NewInterface(ctk.CTk):
 
         CTkmsg(self, title="Sucesso",
                message="Emails enviados com sucesso!", icon="check")
-
-
-i = NewInterface()
-i.mainloop()
