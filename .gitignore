@@ -1,7 +1,10 @@
+pedidosAtraso.spec
 .vscode
 __pycache__
+output
+build
+venv
+dist
 *.xlsx
 *.csv
-build
-dist
-pedidosAtraso.spec
+*.json
