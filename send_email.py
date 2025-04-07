@@ -224,4 +224,4 @@ def send_preventive_email(suppliers: dict, emails_cc: list[str]) -> None:
             if not error_log.empty:
                 log_file_path = os.path.join(folder_path, 'error_preventive_log.xlsx')
                 error_log.to_excel(log_file_path, index=False)
-            outlook.Quit()
+    outlook.Quit()
