@@ -9,3 +9,7 @@ dist
 *.csv
 *.json
 ./tmp
+*.bin
+.env
+.venv
+.venv_*
