@@ -2,12 +2,13 @@ import json
 import os
 from typing import Any, Dict
 
+
 class ConfigManager:
     """
     Global system configuration manager.
     Responsible for reading, validating, and saving the JSON configuration file.
     """
-    
+
     def __init__(self, config_path: str = "configs.json") -> None:
         self.config_path = config_path
         self.is_new_install = False
@@ -15,9 +16,9 @@ class ConfigManager:
 
     def _initialize_config(self) -> Dict[str, Any]:
         """
-        Validates the existence of the config file. 
+        Validates the existence of the config file.
         If it doesn't exist, creates a default template and flags as a new install.
-        
+
         Returns:
             Dict[str, Any]: Dictionary containing the configurations.
         """
@@ -25,7 +26,9 @@ class ConfigManager:
             "username": "",
             "password": "",
             "outlook_email": "",
-            "outlook_password": ""
+            "outlook_password": "",
+            "ms_graph_client_id": "YOUR_CLIENT_ID_HERE",
+            "ms_graph_tenant_id": "common",
         }
 
         if not os.path.exists(self.config_path):
@@ -34,7 +37,7 @@ class ConfigManager:
             return default_config
 
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
+            with open(self.config_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except json.JSONDecodeError:
             self.is_new_install = True
@@ -56,14 +59,14 @@ class ConfigManager:
 
     def _write_file(self, data: Dict[str, Any]) -> None:
         """Internal utility method to write to the file."""
-        with open(self.config_path, 'w', encoding='utf-8') as f:
+        with open(self.config_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
     def get_session_config(self) -> Dict[str, str]:
         """Retrieves the session credentials."""
         return {
             "username": self.get("username", ""),
-            "password": self.get("password", "")
+            "password": self.get("password", ""),
         }
 
     def set_session_config(self, session_config: Dict[str, str]) -> None:
@@ -76,11 +79,28 @@ class ConfigManager:
         """Retrieves the Outlook SMTP credentials."""
         return {
             "outlook_email": self.get("outlook_email", ""),
-            "outlook_password": self.get("outlook_password", "")
+            "outlook_password": self.get("outlook_password", ""),
         }
 
     def set_outlook_config(self, outlook_config: Dict[str, str]) -> None:
         """Updates the Outlook SMTP credentials and saves them."""
         self.config["outlook_email"] = outlook_config.get("outlook_email", "")
         self.config["outlook_password"] = outlook_config.get("outlook_password", "")
+        self.save()
+
+    def get_ms_graph_config(self) -> Dict[str, str]:
+        """Retrieves the MS Graph API configuration."""
+        return {
+            "ms_graph_client_id": self.get("ms_graph_client_id", ""),
+            "ms_graph_tenant_id": self.get("ms_graph_tenant_id", "common"),
+        }
+
+    def set_ms_graph_config(self, ms_graph_config: Dict[str, str]) -> None:
+        """Updates the MS Graph API configuration and saves them."""
+        self.config["ms_graph_client_id"] = ms_graph_config.get(
+            "ms_graph_client_id", ""
+        )
+        self.config["ms_graph_tenant_id"] = ms_graph_config.get(
+            "ms_graph_tenant_id", "common"
+        )
         self.save()

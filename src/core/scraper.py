@@ -16,25 +16,43 @@ class ReportScraper:
         self.today = datetime.now().date()
         self.today_str = self.today.strftime("%Y-%m-%d")
 
-    async def get_all_reports(self, init_date: str, end_date: str):
+    async def get_all_reports(
+        self, init_date: str, end_date: str, download_suppliers: bool = True
+    ):
         """
         Fetches both suppliers and pending orders reports concurrently,
         merges them, saves the outputs (JSON/Excel), and returns the unified data.
         """
         logging.info(
-            f"Starting parallel fetch for reports from {init_date} to {end_date}."
+            f"Starting parallel fetch for reports from {init_date} to {end_date}. "
+            f"Download suppliers: {download_suppliers}"
         )
 
-        suppliers_task = asyncio.create_task(
-            self.get_suppliers_report(return_json=False)
-        )
         pending_orders_task = asyncio.create_task(
             self.get_pending_orders_report(init_date, end_date, return_json=False)
         )
 
-        suppliers, pending_orders = await asyncio.gather(
-            suppliers_task, pending_orders_task
-        )
+        if download_suppliers:
+            suppliers_task = asyncio.create_task(
+                self.get_suppliers_report(return_json=False)
+            )
+            suppliers, pending_orders = await asyncio.gather(
+                suppliers_task, pending_orders_task
+            )
+        else:
+            # Use static local file
+            suppliers_path = os.path.join("tmp", "fornecedores.json")
+            if os.path.exists(suppliers_path):
+                logging.info(f"Using local suppliers list from: {suppliers_path}")
+                with open(suppliers_path, "r", encoding="utf-8") as f:
+                    suppliers = json.load(f)
+            else:
+                logging.warning(
+                    f"Local suppliers list not found at {suppliers_path}. Fetching anyway."
+                )
+                suppliers = await self.get_suppliers_report(return_json=False)
+
+            pending_orders = await pending_orders_task
 
         logging.info("Both reports successfully fetched. Starting unification process.")
         return self._unify_reports(suppliers, pending_orders)
@@ -102,9 +120,10 @@ class ReportScraper:
         if not return_json:
             json_str = json.dumps(records, ensure_ascii=False, indent=4)
             json_str = json_str.replace("\\/", "/")
-            with open("fornecedores.json", "w", encoding="utf-8") as f:
+            os.makedirs("tmp", exist_ok=True)
+            with open("tmp/fornecedores.json", "w", encoding="utf-8") as f:
                 f.write(json_str)
-            logging.info("Raw suppliers JSON file generated successfully.")
+            logging.info("Raw suppliers JSON file generated successfully in tmp/.")
 
         return records
 
@@ -169,9 +188,12 @@ class ReportScraper:
         if not return_json:
             json_data = json.dumps(records, ensure_ascii=False, indent=4)
             json_data = json_data.replace("\\/", "/")
-            with open("entregas_pendentes.json", "w", encoding="utf-8") as f:
+            os.makedirs("tmp", exist_ok=True)
+            with open("tmp/entregas_pendentes.json", "w", encoding="utf-8") as f:
                 f.write(json_data)
-            logging.info(f"Raw pending orders JSON generated ({len(df)} records).")
+            logging.info(
+                f"Raw pending orders JSON generated ({len(df)} records) in tmp/."
+            )
 
         return records
 
@@ -201,10 +223,13 @@ class ReportScraper:
         supplier_map, name_to_cnpj = self._map_suppliers(suppliers)
 
         logging.info("Classifying orders by status (late/future)...")
-        unified_data = self._classify_orders(pending_orders, supplier_map, name_to_cnpj)
+        unified_data, without_email_data = self._classify_orders(
+            pending_orders, supplier_map, name_to_cnpj
+        )
 
         self._save_json(unified_data)
         self._save_excel(unified_data)
+        self._save_suppliers_without_email_excel(without_email_data)
 
         return unified_data
 
@@ -273,10 +298,18 @@ class ReportScraper:
             key = "late_orders" if dt_obj < self.today else "future_orders"
             supplier_map[target_cnpj][key].append(order_info)
 
-        # Return only suppliers that have active orders
-        return [
-            v for v in supplier_map.values() if v["late_orders"] or v["future_orders"]
-        ]
+        # Separate suppliers with orders into two groups: with valid email and without
+        valid_suppliers = []
+        without_email_suppliers = []
+
+        for v in supplier_map.values():
+            if v["late_orders"] or v["future_orders"]:
+                if v["email"] in ["-", "NaN", None, ""]:
+                    without_email_suppliers.append(v)
+                else:
+                    valid_suppliers.append(v)
+
+        return valid_suppliers, without_email_suppliers
 
     def _parse_date(self, date_str):
         """
@@ -325,6 +358,51 @@ class ReportScraper:
 
         if rows:
             df = pd.DataFrame(rows)
+            # Ensure BR date format in Excel
+            if "Data de entrega" in df.columns:
+                df["Data de entrega"] = pd.to_datetime(
+                    df["Data de entrega"]
+                ).dt.strftime("%d/%m/%Y")
+
             file_path = os.path.join(path, f"{self.today_str}_relatorio_compras.xlsx")
             df.to_excel(file_path, index=False)
             logging.info(f"Unified Excel report successfully saved to: {file_path}")
+
+    def _save_suppliers_without_email_excel(self, data):
+        """
+        Exports suppliers that have orders but no email to a separate Excel file.
+        """
+        if not data:
+            return
+
+        path = "tmp/relatorios"
+        os.makedirs(path, exist_ok=True)
+
+        rows = []
+        for s in data:
+            for order in s["late_orders"] + s["future_orders"]:
+                rows.append(
+                    {
+                        "Fornecedor": s["supplier_name"],
+                        "CNPJ": s["cnpj"],
+                        "Email": "PENDENTE",
+                        "Status": (
+                            "Atrasado" if order["Dias de Atraso"] > 0 else "No Prazo"
+                        ),
+                        **order,
+                    }
+                )
+
+        if rows:
+            df = pd.DataFrame(rows)
+            # Ensure BR date format in Excel
+            if "Data de entrega" in df.columns:
+                df["Data de entrega"] = pd.to_datetime(
+                    df["Data de entrega"]
+                ).dt.strftime("%d/%m/%Y")
+
+            file_path = os.path.join(
+                path, f"{self.today_str}_fornecedores_sem_email.xlsx"
+            )
+            df.to_excel(file_path, index=False)
+            logging.info(f"Report for suppliers without email saved to: {file_path}")

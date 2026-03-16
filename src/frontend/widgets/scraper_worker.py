@@ -2,20 +2,29 @@
 import asyncio
 from PySide6.QtCore import QThread, Signal
 from src.core.session_manager import SessionManager
-from src.core.scraper import ReportScraper # Ajuste o import conforme sua estrutura
+from src.core.scraper import ReportScraper  # Ajuste o import conforme sua estrutura
+
 
 class ScraperWorker(QThread):
     """
     Worker para rodar a extração de dados sem travar a GUI do PySide6.
     """
+
     finished_success = Signal(list)
     finished_error = Signal(str)
 
-    def __init__(self, session_manager: SessionManager, init_date: str, end_date: str):
+    def __init__(
+        self,
+        session_manager: SessionManager,
+        init_date: str,
+        end_date: str,
+        download_suppliers: bool = True,
+    ):
         super().__init__()
         self.session_manager = session_manager
         self.init_date = init_date
         self.end_date = end_date
+        self.download_suppliers = download_suppliers
 
     def run(self):
         try:
@@ -23,15 +32,19 @@ class ScraperWorker(QThread):
             async def fetch_data():
                 # Garante que está logado antes de puxar
                 if not self.session_manager.session:
-                    await self.session_manager.login() 
+                    await self.session_manager.login()
 
                 scraper = ReportScraper(self.session_manager)
-                return await scraper.get_all_reports(self.init_date, self.end_date)
+                return await scraper.get_all_reports(
+                    self.init_date,
+                    self.end_date,
+                    download_suppliers=self.download_suppliers,
+                )
 
             # Cria um novo event loop para essa Thread específica
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            
+
             # Executa a tarefa e pega o resultado
             result = loop.run_until_complete(fetch_data())
             loop.close()

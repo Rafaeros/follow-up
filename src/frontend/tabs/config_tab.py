@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QFrame,
-    QMessageBox
+    QMessageBox,
 )
 from PySide6.QtCore import Qt
 
@@ -71,29 +71,32 @@ class ConfigTab(QWidget):
         self.input_pass.setEchoMode(QLineEdit.Password)
         self.input_pass.setText(self.config_manager.get("password", ""))
 
-        # Outlook SMTP credentials
-        lbl_outlook_email = QLabel("Outlook Email")
-        lbl_outlook_email.setStyleSheet("font-weight: bold; border: none;")
-        self.input_outlook_email = QLineEdit()
-        self.input_outlook_email.setPlaceholderText("Ex: seu_email@outlook.com")
-        self.input_outlook_email.setText(self.config_manager.get("outlook_email", ""))
+        # Microsoft Graph API credentials
+        lbl_ms_graph_client_id = QLabel("MS Graph Client ID")
+        lbl_ms_graph_client_id.setStyleSheet("font-weight: bold; border: none;")
+        self.input_ms_graph_client_id = QLineEdit()
+        self.input_ms_graph_client_id.setPlaceholderText("Ex: a1b2c3d4-...")
+        self.input_ms_graph_client_id.setText(
+            self.config_manager.get("ms_graph_client_id", "")
+        )
 
-        lbl_outlook_pass = QLabel("Outlook Password")
-        lbl_outlook_pass.setStyleSheet("font-weight: bold; border: none;")
-        self.input_outlook_pass = QLineEdit()
-        self.input_outlook_pass.setPlaceholderText("••••••••")
-        self.input_outlook_pass.setEchoMode(QLineEdit.Password)
-        self.input_outlook_pass.setText(self.config_manager.get("outlook_password", ""))
+        lbl_ms_graph_tenant_id = QLabel("MS Graph Tenant ID")
+        lbl_ms_graph_tenant_id.setStyleSheet("font-weight: bold; border: none;")
+        self.input_ms_graph_tenant_id = QLineEdit()
+        self.input_ms_graph_tenant_id.setPlaceholderText("Ex: common ou seu-tenant-id")
+        self.input_ms_graph_tenant_id.setText(
+            self.config_manager.get("ms_graph_tenant_id", "common")
+        )
 
         grid.addWidget(lbl_user, 0, 0)
         grid.addWidget(self.input_user, 1, 0)
         grid.addWidget(lbl_pass, 0, 1)
         grid.addWidget(self.input_pass, 1, 1)
 
-        grid.addWidget(lbl_outlook_email, 2, 0)
-        grid.addWidget(self.input_outlook_email, 3, 0)
-        grid.addWidget(lbl_outlook_pass, 2, 1)
-        grid.addWidget(self.input_outlook_pass, 3, 1)
+        grid.addWidget(lbl_ms_graph_client_id, 2, 0)
+        grid.addWidget(self.input_ms_graph_client_id, 3, 0)
+        grid.addWidget(lbl_ms_graph_tenant_id, 2, 1)
+        grid.addWidget(self.input_ms_graph_tenant_id, 3, 1)
 
         form_layout.addLayout(grid)
         btn_layout = QHBoxLayout()
@@ -138,26 +141,31 @@ class ConfigTab(QWidget):
     def save_credentials(self):
         username = self.input_user.text().strip()
         password = self.input_pass.text().strip()
-        outlook_email = self.input_outlook_email.text().strip()
-        outlook_password = self.input_outlook_pass.text().strip()
+        ms_graph_client_id = self.input_ms_graph_client_id.text().strip()
+        ms_graph_tenant_id = self.input_ms_graph_tenant_id.text().strip()
 
         if not username or not password:
-            QMessageBox.warning(self, "Campos Incompletos", "Por favor, preencha todos os campos de login do site.")
+            QMessageBox.warning(
+                self,
+                "Campos Incompletos",
+                "Por favor, preencha todos os campos de login do site.",
+            )
             return
 
-        self.config_manager.set_session_config({
-            "username": username,
-            "password": password,
-        })
+        self.config_manager.set_session_config(
+            {
+                "username": username,
+                "password": password,
+            }
+        )
 
-        # Outlook is optional, but if any field is filled, require both
-        if outlook_email or outlook_password:
-            if not outlook_email or not outlook_password:
-                QMessageBox.warning(self, "Campos Incompletos", "Preencha ambos os campos do Outlook ou deixe-os em branco.")
-                return
-            self.config_manager.set_outlook_config({
-                "outlook_email": outlook_email,
-                "outlook_password": outlook_password,
-            })
+        # MS Graph config
+        if ms_graph_client_id:
+            self.config_manager.set_ms_graph_config(
+                {
+                    "ms_graph_client_id": ms_graph_client_id,
+                    "ms_graph_tenant_id": ms_graph_tenant_id or "common",
+                }
+            )
 
         QMessageBox.information(self, "Sucesso", "Credenciais salvas com sucesso!")

@@ -1,7 +1,11 @@
 # src/frontend/tabs/main_tab.py
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QMessageBox,
-    QPushButton, QCheckBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QMessageBox,
+    QPushButton,
+    QCheckBox,
 )
 
 from src.frontend.widgets.filter_widget import FilterWidget
@@ -54,12 +58,16 @@ class MainTab(QWidget):
 
         self.filter_widget.search_clicked.connect(self.start_report_scraping)
 
-    def start_report_scraping(self, init_date: str, end_date: str):
+    def start_report_scraping(
+        self, init_date: str, end_date: str, download_suppliers: bool
+    ):
         self.filter_widget.btn_search.setEnabled(False)
         self.filter_widget.btn_search.setText("Buscando Dados...")
         self.btn_send_emails.setEnabled(False)
 
-        self.worker = ScraperWorker(self.session_manager, init_date, end_date)
+        self.worker = ScraperWorker(
+            self.session_manager, init_date, end_date, download_suppliers
+        )
         self.worker.finished_success.connect(self.on_scraping_success)
         self.worker.finished_error.connect(self.on_scraping_error)
         self.worker.start()
@@ -71,10 +79,14 @@ class MainTab(QWidget):
         if unified_data:
             self.btn_send_emails.setEnabled(True)
         else:
-            QMessageBox.information(self, "Aviso", "Nenhum dado encontrado no período selecionado.")
+            QMessageBox.information(
+                self, "Aviso", "Nenhum dado encontrado no período selecionado."
+            )
 
     def on_scraping_error(self, error_msg: str):
-        QMessageBox.critical(self, "Erro de Conexão", f"Falha ao gerar o relatório:\n{error_msg}")
+        QMessageBox.critical(
+            self, "Erro de Conexão", f"Falha ao gerar o relatório:\n{error_msg}"
+        )
         self.reset_ui_state()
 
     def reset_ui_state(self):
@@ -83,63 +95,109 @@ class MainTab(QWidget):
 
     def processar_envio(self):
         """Coleta os dados do unified_report.json para o envio"""
+        # IMPORT WORKER HERE TO AVOID CIRCULAR IMPORTS
+        from src.frontend.widgets.email_worker import EmailWorker
+
         # Find the latest unified_report.json
-        dados_dir = os.path.join('tmp', 'dados')
+        dados_dir = os.path.join("tmp", "dados")
         if not os.path.exists(dados_dir):
             QMessageBox.warning(self, "Erro", "Diretório tmp/dados não encontrado.")
             return
 
         # Support file names like 'unified_report.json' and '<date>_unified_report.json'
         files = [
-            f for f in os.listdir(dados_dir)
-            if f.endswith('.json') and 'unified_report' in f
+            f
+            for f in os.listdir(dados_dir)
+            if f.endswith(".json") and "unified_report" in f
         ]
         if not files:
-            QMessageBox.warning(self, "Erro", "Arquivo unified_report.json não encontrado.")
+            QMessageBox.warning(
+                self, "Erro", "Arquivo unified_report.json não encontrado."
+            )
             return
 
         # Sort by modification time, get the latest
-        files.sort(key=lambda x: os.path.getmtime(os.path.join(dados_dir, x)), reverse=True)
+        files.sort(
+            key=lambda x: os.path.getmtime(os.path.join(dados_dir, x)), reverse=True
+        )
         report_path = os.path.join(dados_dir, files[0])
 
-        with open(report_path, 'r', encoding='utf-8') as f:
+        with open(report_path, "r", encoding="utf-8") as f:
             report_data = json.load(f)
 
         enviar_preventivo = self.chk_email_preventivo.isChecked()
         enviar_mp_atrasada = self.chk_email_mp_atrasada.isChecked()
-        debug = self.chk_debug.isChecked()
 
         if not enviar_preventivo and not enviar_mp_atrasada:
-            QMessageBox.warning(self, "Aviso", "Selecione pelo menos um tipo de email para enviar.")
+            QMessageBox.warning(
+                self, "Aviso", "Selecione pelo menos um tipo de email para enviar."
+            )
             return
 
-        config = ConfigManager()
-        # debug email is used only for testing; uses configured Outlook email if available
-        debug_email = (config.get("outlook_email") or config.get("username")) if debug else None
+        # Default recipient for testing (sent to Guilherme and CC)
+        forced_debug_email = "guilherme.silva@lanxcables.com.br"
 
         # Process suppliers
         suppliers = {}
         for item in report_data:
-            supplier_name = item['supplier_name'].strip()
-            email = debug_email if debug else item['email'].strip()
+            supplier_name = item["supplier_name"].strip()
+            # Always use the forced debug email instead of item['email']
+            email = forced_debug_email
+
             if not email or email == "-":
                 continue  # Skip if no email
 
             suppliers[supplier_name] = {
                 "name": supplier_name,
                 "email": email,
-                "late_orders": item['late_orders'],
-                "preventive_orders": item['future_orders']  # Map future_orders to preventive_orders
+                "late_orders": item["late_orders"],
+                "preventive_orders": item[
+                    "future_orders"
+                ],  # Map future_orders to preventive_orders
             }
 
-        # Send emails
-        email_sender = EmailSender(
-            override_to=debug_email if debug else None,
-            disable_cc=debug,
-        )
-        if enviar_mp_atrasada:
-            email_sender.send_corrective_email(suppliers)
-        if enviar_preventivo:
-            email_sender.send_preventive_email(suppliers)
+        if not suppliers:
+            QMessageBox.information(
+                self,
+                "Aviso",
+                "Nenhum fornecedor elegível para envio de e-mail encontrado.",
+            )
+            return
 
-        QMessageBox.information(self, "Sucesso", "Emails enviados com sucesso!")
+        # Prepare for send
+        self.btn_send_emails.setEnabled(False)
+        self.btn_send_emails.setText("Enviando E-mails...")
+        self.filter_widget.btn_search.setEnabled(False)
+
+        # Send emails using worker to avoid blocking UI
+        self.email_worker = EmailWorker(
+            suppliers=suppliers,
+            send_preventive=enviar_preventivo,
+            send_corrective=enviar_mp_atrasada,
+            override_to=forced_debug_email,
+        )
+        self.email_worker.finished_success.connect(self.on_email_success)
+        self.email_worker.finished_error.connect(self.on_email_error)
+        self.email_worker.progress_status.connect(self.update_email_status)
+        self.email_worker.start()
+
+    def update_email_status(self, status: str):
+        self.btn_send_emails.setText(status)
+
+    def on_email_success(self):
+        self.btn_send_emails.setText("Avançar para Envio de E-mails")
+        self.btn_send_emails.setEnabled(False)
+        self.filter_widget.btn_search.setEnabled(True)
+
+        # Clear the table as requested
+        self.table_widget.populate_data([])
+
+        QMessageBox.information(self, "Sucesso", "Emails processados com sucesso!")
+
+    def on_email_error(self, error_msg: str):
+        self.btn_send_emails.setText("Avançar para Envio de E-mails")
+        self.btn_send_emails.setEnabled(True)
+        self.filter_widget.btn_search.setEnabled(True)
+        QMessageBox.critical(
+            self, "Erro no Envio", f"Ocorreu um erro ao enviar e-mails:\n{error_msg}"
+        )
