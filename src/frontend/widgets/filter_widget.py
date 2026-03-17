@@ -32,7 +32,7 @@ class FilterWidget(QWidget):
         from PySide6.QtWidgets import QCheckBox
 
         self.chk_update_suppliers = QCheckBox("Atualizar fornecedores")
-        self.chk_update_suppliers.setChecked(True)
+        self.chk_update_suppliers.setChecked(False)
 
         self.btn_search = QPushButton("Puxar Relatório")
         self.btn_search.setObjectName("primary")

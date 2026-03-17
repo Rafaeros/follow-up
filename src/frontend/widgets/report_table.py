@@ -1,13 +1,16 @@
 # src/gui/components/report_table.py
 from PySide6.QtWidgets import QTableWidget, QHeaderView, QTableWidgetItem, QMenu
 from PySide6.QtGui import QColor, QAction
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from datetime import datetime
 
 class ReportTable(QTableWidget):
     """
     Responsabilidade: Configurar e gerenciar a exibição da tabela de relatórios.
     """
+
+    supplier_removed = Signal(str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setup_ui()
@@ -47,13 +50,25 @@ class ReportTable(QTableWidget):
         if linha_atual >= 0:
             self.removeRow(linha_atual)
 
+    def keyPressEvent(self, event):
+        """Permite deletar o fornecedor pressionando a tecla Delete."""
+        from PySide6.QtCore import Qt
+
+        if event.key() == Qt.Key_Delete:
+            self.remover_fornecedor_selecionado()
+        else:
+            super().keyPressEvent(event)
+
     def remover_fornecedor_selecionado(self):
         """Remove todas as linhas da tabela que tiverem o mesmo nome de fornecedor."""
         linha_atual = self.currentRow()
         if linha_atual >= 0:
             # O nome do fornecedor está na coluna de índice 2
             nome_fornecedor = self.item(linha_atual, 2).text()
-            
+
+            # Emitir sinal para que a lógica externa (MainTab) remova este fornecedor da lista de envios
+            self.supplier_removed.emit(nome_fornecedor)
+
             # Loop reverso: deletamos de baixo para cima para não quebrar os índices
             for row in range(self.rowCount() - 1, -1, -1):
                 if self.item(row, 2).text() == nome_fornecedor:
