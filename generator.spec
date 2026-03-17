@@ -1,39 +1,38 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec file for building the Follow-Up app.
+"""Arquivo de configuração (spec) do PyInstaller para compilar o app Follow-Up.
 
-Usage:
+Uso:
   pyinstaller generator.spec
 
-Notes:
-- This spec is written to work on both Linux and Windows (when run on each platform).
-- PyInstaller does not cross-compile; to build a Windows exe you must run this on Windows.
-- It bundles all Python dependencies and includes the project data files.
+Notas:
+- O PyInstaller não faz compilação cruzada (cross-compile). Para gerar um .exe, rode no Windows.
+- Arquivos dinâmicos (como configs.json e emails_cc.json) foram removidos do 'datas'
+  pois são gerados e alterados em tempo de execução pela aplicação.
 """
 
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
-# Root of the project (where this spec lives)
-project_root = Path(__file__).resolve().parent
+# A variável SPECPATH é injetada globalmente pelo PyInstaller com o caminho absoluto deste arquivo
+project_root = Path(SPECPATH)
 
-# Make sure PyInstaller can find your source packages
+# Garante que o PyInstaller encontre os pacotes do código-fonte
 pathex = [
     str(project_root),
     str(project_root / "src"),
 ]
 
-# Include all submodules under the src package (ensures dynamic imports are collected)
+# Inclui todos os submódulos da pasta src (garante que imports dinâmicos sejam coletados)
 hiddenimports = collect_submodules("src")
 
-# Include user-facing config/data files that are loaded at runtime
+# Inclui APENAS arquivos estáticos de interface e recursos inalteráveis.
+# IMPORTANTE: Arquivos JSON criados pelo programa NÃO entram aqui.
 datas = [
-    (str(project_root / "configs.json"), "."),
-    (str(project_root / "emails_cc.json"), "."),
-    # Include the UI theme file used by the frontend
+    # Inclui o arquivo de tema visual usado pelo frontend
     (str(project_root / "src" / "frontend" / "theme.qss"), "src/frontend"),
 ]
 
-# Collect any package data under src (if any exist)
+# Coleta quaisquer outros arquivos de dados estáticos que existam dentro da pasta src
 datas += collect_data_files("src")
 
 a = Analysis(
@@ -63,7 +62,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=True, # Dica: Mude para False se quiser esconder a janela preta do CMD no futuro
 )
 
 coll = COLLECT(
