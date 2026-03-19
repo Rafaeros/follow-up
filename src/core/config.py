@@ -27,8 +27,7 @@ class ConfigManager:
             "password": "",
             "outlook_email": "",
             "outlook_password": "",
-            "ms_graph_client_id": "YOUR_CLIENT_ID_HERE",
-            "ms_graph_tenant_id": "common",
+            "ms_graph_client_id": "03c30696-9a18-4eb9-97d6-65c5901fafe4",
         }
 
         if not os.path.exists(self.config_path):
@@ -91,16 +90,14 @@ class ConfigManager:
     def get_ms_graph_config(self) -> Dict[str, str]:
         """Retrieves the MS Graph API configuration."""
         return {
-            "ms_graph_client_id": self.get("ms_graph_client_id", ""),
-            "ms_graph_tenant_id": self.get("ms_graph_tenant_id", "common"),
+            "ms_graph_client_id": self.get(
+                "ms_graph_client_id", "03c30696-9a18-4eb9-97d6-65c5901fafe4"
+            ),
         }
 
     def set_ms_graph_config(self, ms_graph_config: Dict[str, str]) -> None:
         """Updates the MS Graph API configuration and saves them."""
         self.config["ms_graph_client_id"] = ms_graph_config.get(
-            "ms_graph_client_id", ""
-        )
-        self.config["ms_graph_tenant_id"] = ms_graph_config.get(
-            "ms_graph_tenant_id", "common"
+            "ms_graph_client_id", "03c30696-9a18-4eb9-97d6-65c5901fafe4"
         )
         self.save()

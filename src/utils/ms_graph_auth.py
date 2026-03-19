@@ -13,33 +13,14 @@ class MSGraphAuth:
     Supports interactive browser login and token caching.
     """
 
-    # Default Client ID for LANX (if not provided in config)
-    # The user needs to register this in Azure Portal
-    # For now, I'll use a common placeholder or ask the user to provide it.
-    DEFAULT_CLIENT_ID = "YOUR_CLIENT_ID_HERE"
+    # Default Client ID for LANX
+    DEFAULT_CLIENT_ID = "03c30696-9a18-4eb9-97d6-65c5901fafe4"
     DEFAULT_TENANT_ID = "common"
     SCOPES = ["Mail.Send", "User.Read"]
 
-    def __init__(self, client_id=None, tenant_id=None):
+    def __init__(self, client_id=None):
         self.client_id = client_id or self.DEFAULT_CLIENT_ID
-        raw_tenant = tenant_id or self.DEFAULT_TENANT_ID
-
-        # Sanitize tenant_id (prevents "co[UUID]mmon" errors if user pasted over "common")
-        if "common" in raw_tenant and len(raw_tenant) > 10:
-            # If it looks like a mix of common and a UUID
-            import re
-
-            uuids = re.findall(
-                r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-                raw_tenant,
-            )
-            if uuids:
-                self.tenant_id = uuids[0]
-            else:
-                self.tenant_id = "common"
-        else:
-            self.tenant_id = raw_tenant
-
+        self.tenant_id = self.DEFAULT_TENANT_ID
         self.authority = f"https://login.microsoftonline.com/{self.tenant_id}"
 
         # Token cache file
@@ -47,8 +28,11 @@ class MSGraphAuth:
         self.token_cache = SerializableTokenCache()
 
         if os.path.exists(self.cache_file):
-            with open(self.cache_file, "r") as f:
-                self.token_cache.deserialize(f.read())
+            try:
+                with open(self.cache_file, "r") as f:
+                    self.token_cache.deserialize(f.read())
+            except Exception as e:
+                logger.error(f"Erro ao ler cache de tokens: {e}")
 
         self.app = PublicClientApplication(
             self.client_id, authority=self.authority, token_cache=self.token_cache
@@ -56,6 +40,8 @@ class MSGraphAuth:
 
     def _save_cache(self):
         if self.token_cache.has_state_changed:
+            if not os.path.exists(os.path.dirname(self.cache_file)):
+                os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
             with open(self.cache_file, "w") as f:
                 f.write(self.token_cache.serialize())
 
@@ -63,9 +49,6 @@ class MSGraphAuth:
         """
         Retrieves an access token. Tries silent flow first, then interactive.
         """
-        if self.client_id == "YOUR_CLIENT_ID_HERE":
-            raise Exception("MS Graph Client ID não configurado. Vá em Configurações.")
-
         accounts = self.app.get_accounts()
         result = None
 
@@ -80,19 +63,15 @@ class MSGraphAuth:
         if "access_token" in result:
             return result["access_token"]
         else:
-            error_msg = result.get(
-                "error_description", "Erro desconhecido durante a autenticação."
-            )
-            raise Exception(f"Falha ao adquirir token: {error_msg}")
+            # If silent fails, try interactive
+            return self.login()
 
     def login(self):
         """
         Executa o login interativo via navegador.
         """
-        if self.client_id == "YOUR_CLIENT_ID_HERE":
-            raise Exception("MS Graph Client ID não configurado.")
-
         logger.info("Iniciando login interativo no navegador...")
+        # Note: Localhost port will be automatically assigned by MSAL if not specified
         result = self.app.acquire_token_interactive(self.SCOPES)
         self._save_cache()
 
@@ -111,6 +90,11 @@ class MSGraphAuth:
         for account in accounts:
             self.app.remove_account(account)
         self._save_cache()
+        if os.path.exists(self.cache_file):
+            try:
+                os.remove(self.cache_file)
+            except:
+                pass
         logger.info("Logout realizado. Cache de tokens limpo.")
 
 

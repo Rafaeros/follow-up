@@ -78,8 +78,7 @@ class EmailSender:
 
         # Initialize MS Graph Auth
         client_id = self.config.get("ms_graph_client_id")
-        tenant_id = self.config.get("ms_graph_tenant_id")
-        self.auth = MSGraphAuth(client_id=client_id, tenant_id=tenant_id)
+        self.auth = MSGraphAuth(client_id=client_id)
 
     def load_emails_cc(self):
         if os.path.exists(self.emails_cc_file):

@@ -72,32 +72,10 @@ class ConfigTab(QWidget):
         self.input_pass.setEchoMode(QLineEdit.Password)
         self.input_pass.setText(self.config_manager.get("password", ""))
 
-        # Microsoft Graph API credentials
-        lbl_ms_graph_client_id = QLabel("MS Graph Client ID")
-        lbl_ms_graph_client_id.setStyleSheet("font-weight: bold; border: none;")
-        self.input_ms_graph_client_id = QLineEdit()
-        self.input_ms_graph_client_id.setPlaceholderText("Ex: a1b2c3d4-...")
-        self.input_ms_graph_client_id.setText(
-            self.config_manager.get("ms_graph_client_id", "")
-        )
-
-        lbl_ms_graph_tenant_id = QLabel("MS Graph Tenant ID")
-        lbl_ms_graph_tenant_id.setStyleSheet("font-weight: bold; border: none;")
-        self.input_ms_graph_tenant_id = QLineEdit()
-        self.input_ms_graph_tenant_id.setPlaceholderText("Ex: common ou seu-tenant-id")
-        self.input_ms_graph_tenant_id.setText(
-            self.config_manager.get("ms_graph_tenant_id", "common")
-        )
-
         grid.addWidget(lbl_user, 0, 0)
         grid.addWidget(self.input_user, 1, 0)
         grid.addWidget(lbl_pass, 0, 1)
         grid.addWidget(self.input_pass, 1, 1)
-
-        grid.addWidget(lbl_ms_graph_client_id, 2, 0)
-        grid.addWidget(self.input_ms_graph_client_id, 3, 0)
-        grid.addWidget(lbl_ms_graph_tenant_id, 2, 1)
-        grid.addWidget(self.input_ms_graph_tenant_id, 3, 1)
 
         form_layout.addLayout(grid)
 
@@ -142,14 +120,14 @@ class ConfigTab(QWidget):
         )
         info_layout = QVBoxLayout(info_frame)
 
-        info_title = QLabel("Instruções de Login Outlook")
+        info_title = QLabel("Login Outlook (Navegador)")
         info_title.setStyleSheet("color: #7609e8; font-weight: bold;")
         info_text = QLabel(
-            "1. Insira o Client ID do aplicativo registrado no Azure.\n"
-            "2. Use 'common' como Tenant ID para permitir que qualquer conta Microsoft (pessoal ou trabalho) acesse.\n"
-            "3. Clique em 'Salvar Alterações' primeiro.\n"
-            "4. Clique em 'Autenticar no Outlook' para abrir o navegador e fazer login.\n"
-            "Dessa forma, cada usuário pode conectar sua própria conta sem problemas."
+            "1. Clique no botão azul 'Autenticar no Outlook' abaixo.\n"
+            "2. O seu navegador padrão será aberto para fazer login na sua conta Microsoft.\n"
+            "3. Após conceder permissão, você poderá fechar a aba do navegador.\n"
+            "4. O sistema usará essa sessão para enviar os e-mails automaticamente.\n"
+            "Dessa forma, qualquer usuário pode conectar sua própria conta sem precisar de IDs técnicos."
         )
         info_text.setWordWrap(True)
         info_text.setStyleSheet("color: #475569;")
@@ -161,24 +139,6 @@ class ConfigTab(QWidget):
     def save_credentials(self):
         username = self.input_user.text().strip()
         password = self.input_pass.text().strip()
-        ms_graph_client_id = self.input_ms_graph_client_id.text().strip()
-        ms_graph_tenant_id = self.input_ms_graph_tenant_id.text().strip()
-
-        # Sanitize tenant_id if mangled (common and uuid mix)
-        import re
-
-        if "common" in ms_graph_tenant_id and len(ms_graph_tenant_id) > 10:
-            uuids = re.findall(
-                r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-                ms_graph_tenant_id,
-            )
-            if uuids:
-                ms_graph_tenant_id = uuids[0]
-                self.input_ms_graph_tenant_id.setText(ms_graph_tenant_id)
-            else:
-                ms_graph_tenant_id = "common"
-                self.input_ms_graph_tenant_id.setText("common")
-
         if not username or not password:
             QMessageBox.warning(
                 self,
@@ -187,6 +147,7 @@ class ConfigTab(QWidget):
             )
             return
 
+        # Salva apenas login do site
         self.config_manager.set_session_config(
             {
                 "username": username,
@@ -194,32 +155,16 @@ class ConfigTab(QWidget):
             }
         )
 
-        # MS Graph config
-        if ms_graph_client_id:
-            self.config_manager.set_ms_graph_config(
-                {
-                    "ms_graph_client_id": ms_graph_client_id,
-                    "ms_graph_tenant_id": ms_graph_tenant_id or "common",
-                }
-            )
-
         QMessageBox.information(self, "Sucesso", "Credenciais salvas com sucesso!")
 
     def authenticate_ms_graph(self):
         """Abre o navegador para autenticação no MS Graph."""
-        client_id = self.input_ms_graph_client_id.text().strip()
-        tenant_id = self.input_ms_graph_tenant_id.text().strip() or "common"
-
-        if not client_id or client_id == "YOUR_CLIENT_ID_HERE":
-            QMessageBox.warning(
-                self,
-                "Erro",
-                "Por favor, insira um Client ID válido antes de autenticar.",
-            )
-            return
-
         try:
-            auth = MSGraphAuth(client_id=client_id, tenant_id=tenant_id)
+            # Pega o Client ID configurado (ou o padrão)
+            config = self.config_manager.get_ms_graph_config()
+            client_id = config.get("ms_graph_client_id")
+
+            auth = MSGraphAuth(client_id=client_id)
             auth.login()
             QMessageBox.information(
                 self, "Sucesso", "Autenticação realizada com sucesso!"
