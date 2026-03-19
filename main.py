@@ -48,8 +48,17 @@ def main() -> None:
             loop.run_forever()
     finally:
         # Garante o fechamento da sessão ao encerrar o loop
-        loop.run_until_complete(session_manager.close())
-        logging.info("Sessão encerrada com sucesso.")
+        if not loop.is_closed():
+            try:
+                loop.run_until_complete(session_manager.close())
+                logging.info("Sessão encerrada com sucesso.")
+            except Exception as e:
+                logging.error(f"Erro ao encerrar sessão: {e}")
+        else:
+            # Caso o loop já esteja fechado, não podemos usar run_until_complete
+            # Mas ainda podemos tentar uma limpeza básica se necessário
+            logging.info("Aviso: Loop já estava fechado. Tentando encerrar sessão...")
+            # Note: sessions must be closed within a loop, so we just log it.
 
 
 async def test_report_scraper():

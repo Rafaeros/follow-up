@@ -14,13 +14,13 @@ class MSGraphAuth:
     """
 
     # Default Client ID for LANX
-    DEFAULT_CLIENT_ID = "03c30696-9a18-4eb9-97d6-65c5901fafe4"
-    DEFAULT_TENANT_ID = "common"
+    DEFAULT_CLIENT_ID = "15cd9ff3-25a9-4fb8-9433-6201eef53878"
+    DEFAULT_TENANT_ID = "62c4daa3-2df5-40eb-9aa4-a0d5708ee0e7"
     SCOPES = ["Mail.Send", "User.Read"]
 
-    def __init__(self, client_id=None):
+    def __init__(self, client_id=None, tenant_id=None):
         self.client_id = client_id or self.DEFAULT_CLIENT_ID
-        self.tenant_id = self.DEFAULT_TENANT_ID
+        self.tenant_id = tenant_id or self.DEFAULT_TENANT_ID
         self.authority = f"https://login.microsoftonline.com/{self.tenant_id}"
 
         # Token cache file
