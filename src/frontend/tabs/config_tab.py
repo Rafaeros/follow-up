@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 from PySide6.QtCore import Qt
+from src.utils.ms_graph_auth import MSGraphAuth
 
 
 class ConfigTab(QWidget):
@@ -99,6 +100,21 @@ class ConfigTab(QWidget):
         grid.addWidget(self.input_ms_graph_tenant_id, 3, 1)
 
         form_layout.addLayout(grid)
+
+        # MS Graph Auth Buttons
+        ms_auth_layout = QHBoxLayout()
+        self.btn_ms_login = QPushButton("Autenticar no Outlook (Navegador)")
+        self.btn_ms_login.clicked.connect(self.authenticate_ms_graph)
+        self.btn_ms_login.setStyleSheet(
+            "background-color: #2b579a; color: white; font-weight: bold;"
+        )
+
+        self.btn_ms_logout = QPushButton("Limpar Login")
+        self.btn_ms_logout.clicked.connect(self.logout_ms_graph)
+
+        ms_auth_layout.addWidget(self.btn_ms_login)
+        ms_auth_layout.addWidget(self.btn_ms_logout)
+        form_layout.addLayout(ms_auth_layout)
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
 
@@ -126,10 +142,14 @@ class ConfigTab(QWidget):
         )
         info_layout = QVBoxLayout(info_frame)
 
-        info_title = QLabel("Dica de Segurança")
+        info_title = QLabel("Instruções de Login Outlook")
         info_title.setStyleSheet("color: #7609e8; font-weight: bold;")
         info_text = QLabel(
-            "Recomendamos a troca periódica de suas credenciais de acesso. Evite utilizar senhas óbvias."
+            "1. Insira o Client ID do aplicativo registrado no Azure.\n"
+            "2. Use 'common' como Tenant ID para permitir que qualquer conta Microsoft (pessoal ou trabalho) acesse.\n"
+            "3. Clique em 'Salvar Alterações' primeiro.\n"
+            "4. Clique em 'Autenticar no Outlook' para abrir o navegador e fazer login.\n"
+            "Dessa forma, cada usuário pode conectar sua própria conta sem problemas."
         )
         info_text.setWordWrap(True)
         info_text.setStyleSheet("color: #475569;")
@@ -143,6 +163,21 @@ class ConfigTab(QWidget):
         password = self.input_pass.text().strip()
         ms_graph_client_id = self.input_ms_graph_client_id.text().strip()
         ms_graph_tenant_id = self.input_ms_graph_tenant_id.text().strip()
+
+        # Sanitize tenant_id if mangled (common and uuid mix)
+        import re
+
+        if "common" in ms_graph_tenant_id and len(ms_graph_tenant_id) > 10:
+            uuids = re.findall(
+                r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+                ms_graph_tenant_id,
+            )
+            if uuids:
+                ms_graph_tenant_id = uuids[0]
+                self.input_ms_graph_tenant_id.setText(ms_graph_tenant_id)
+            else:
+                ms_graph_tenant_id = "common"
+                self.input_ms_graph_tenant_id.setText("common")
 
         if not username or not password:
             QMessageBox.warning(
@@ -169,3 +204,38 @@ class ConfigTab(QWidget):
             )
 
         QMessageBox.information(self, "Sucesso", "Credenciais salvas com sucesso!")
+
+    def authenticate_ms_graph(self):
+        """Abre o navegador para autenticação no MS Graph."""
+        client_id = self.input_ms_graph_client_id.text().strip()
+        tenant_id = self.input_ms_graph_tenant_id.text().strip() or "common"
+
+        if not client_id or client_id == "YOUR_CLIENT_ID_HERE":
+            QMessageBox.warning(
+                self,
+                "Erro",
+                "Por favor, insira um Client ID válido antes de autenticar.",
+            )
+            return
+
+        try:
+            auth = MSGraphAuth(client_id=client_id, tenant_id=tenant_id)
+            auth.login()
+            QMessageBox.information(
+                self, "Sucesso", "Autenticação realizada com sucesso!"
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self, "Erro de Autenticação", f"Falha ao autenticar: {str(e)}"
+            )
+
+    def logout_ms_graph(self):
+        """Limpa o cache de login do MS Graph."""
+        try:
+            auth = MSGraphAuth()
+            auth.logout()
+            QMessageBox.information(
+                self, "Sucesso", "Login do Outlook removido com sucesso."
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Erro ao limpar login: {str(e)}")

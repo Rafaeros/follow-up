@@ -41,10 +41,16 @@ def main() -> None:
         session_manager=session_manager,
     )
     window.show()
-
     app.setQuitOnLastWindowClosed(True)
-    with loop:
-        loop.run_forever()
+
+    try:
+        with loop:
+            loop.run_forever()
+    finally:
+        # Garante o fechamento da sessão ao encerrar o loop
+        loop.run_until_complete(session_manager.close())
+        logging.info("Sessão encerrada com sucesso.")
+
 
 async def test_report_scraper():
     """Test function for ReportScraper using correct await patterns."""
@@ -58,11 +64,11 @@ async def test_report_scraper():
     try:
         # CORREÇÃO 1: Use 'await' em vez de 'asyncio.run()' aqui dentro
         success = await session_manager.login()
-        
+
         if success:
             scraper = ReportScraper(session_manager)
             # A data deve ser no formato que o site espera ou seu scraper trata
-            await scraper.get_all_reports('01/03/2026', '31/03/2026')
+            await scraper.get_all_reports("01/03/2026", "31/03/2026")
         else:
             logging.error("Login failed, skipping report fetch.")
 
@@ -70,6 +76,7 @@ async def test_report_scraper():
         # CORREÇÃO 2: Sempre use await no close e garanta que rode no 'finally'
         await session_manager.close()
         logging.info("Session closed safely.")
+
 
 if __name__ == "__main__":
     try:
